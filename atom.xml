@@ -3,11 +3,11 @@
   <title>Codroc Blog</title>
   
   
-  <link href="http://codroc.github.io/atom.xml" rel="self"/>
+  <link href="https://codroc.github.io/project/atom.xml" rel="self"/>
   
-  <link href="http://codroc.github.io/"/>
+  <link href="https://codroc.github.io/project/"/>
   <updated>2021-03-05T09:50:16.517Z</updated>
-  <id>http://codroc.github.io/</id>
+  <id>https://codroc.github.io/project/</id>
   
   <author>
     <name>Codroc</name>
@@ -18,8 +18,8 @@
   
   <entry>
     <title>Hello World</title>
-    <link href="http://codroc.github.io/2021/03/05/hello-world/"/>
-    <id>http://codroc.github.io/2021/03/05/hello-world/</id>
+    <link href="https://codroc.github.io/project/2021/03/05/hello-world/"/>
+    <id>https://codroc.github.io/project/2021/03/05/hello-world/</id>
     <published>2021-03-05T09:49:00.000Z</published>
     <updated>2021-03-05T09:50:16.517Z</updated>
     

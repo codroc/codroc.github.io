@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>http://codroc.github.io/2021/03/05/hello-world/</loc>
+    <loc>https://codroc.github.io/project/2021/03/05/hello-world/</loc>
     
     <lastmod>2021-03-05</lastmod>
     
@@ -10,7 +10,7 @@
   
 
   <url>
-    <loc>http://codroc.github.io/</loc>
+    <loc>https://codroc.github.io/project</loc>
     <lastmod>2021-03-05</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
