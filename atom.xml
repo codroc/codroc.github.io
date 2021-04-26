@@ -6,7 +6,7 @@
   <link href="https://codroc.github.io/atom.xml" rel="self"/>
   
   <link href="https://codroc.github.io/"/>
-  <updated>2021-04-26T12:24:00.859Z</updated>
+  <updated>2021-04-26T12:37:14.701Z</updated>
   <id>https://codroc.github.io/</id>
   
   <author>
@@ -21,14 +21,14 @@
     <link href="https://codroc.github.io/2021/04/26/test-pic/"/>
     <id>https://codroc.github.io/2021/04/26/test-pic/</id>
     <published>2021-04-26T12:15:55.000Z</published>
-    <updated>2021-04-26T12:24:00.859Z</updated>
+    <updated>2021-04-26T12:37:14.701Z</updated>
     
-    <content type="html"><![CDATA[<img src="/.io//04/26/test-pic/pipeline.PNG" class title="This is an test image">]]></content>
+    <content type="html"><![CDATA[<img src="/.io//04/26/test-pic/pipeline.PNG" class title="this is an pipeline image">]]></content>
     
     
       
       
-    <summary type="html">&lt;img src=&quot;/.io//04/26/test-pic/pipeline.PNG&quot; class title=&quot;This is an test image&quot;&gt;
+    <summary type="html">&lt;img src=&quot;/.io//04/26/test-pic/pipeline.PNG&quot; class title=&quot;this is an pipeline image&quot;&gt;
 </summary>
       
     
