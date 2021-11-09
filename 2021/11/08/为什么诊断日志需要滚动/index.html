@@ -1,0 +1,21 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 为什么 诊断日志（diagnostic log）需要 滚动（rolling） ？ · Codroc Blog</title><meta name="description" content="为什么 诊断日志（diagnostic log）需要 滚动（rolling） ？ - Codroc"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="https://codroc.github.io/atom.xml" title="Codroc Blog"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Codroc Blog" type="application/atom+xml">
+</head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/favicon.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/codroc" target="_blank" class="nav-list-link">GITHUB</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">为什么 诊断日志（diagnostic log）需要 滚动（rolling） ？</h1><div class="post-info">2021年11月8日</div><div class="post-content"><h4 id="为什么-诊断日志（diagnostic-log）需要-滚动（rolling）-？"><a href="#为什么-诊断日志（diagnostic-log）需要-滚动（rolling）-？" class="headerlink" title="为什么 诊断日志（diagnostic log）需要 滚动（rolling） ？"></a>为什么 诊断日志（diagnostic log）需要 滚动（rolling） ？</h4><p>日志分为 诊断日志（diagnostic log）和交易日志或事务日志（transaction log）</p>
+<p>前者用于系统软件的信息输出，告知维护人员系统目前的状态等等；后者用于维护数据一致性，常用于文件系统和数据库系统中。</p>
+<p><strong>不滚动带来的影响：</strong></p>
+<p>​    1. 最直接的影响就是，日志文件不断增大，对其操作（例如 append）所花费的时间也会线性增加。文件越大，通过 inode 索引到具体的 disk block 就需要更久的时间，因为后面需要多次索引（多级索引）才能找到那个具体的 disk block，而多次索引则意味着多次读盘。</p>
+<p>​    2. 文件越来越大，占用大量磁盘空间，最终导致无磁盘空间可用。</p>
+<pre><code> 3. 想要找到具体某一天的所有日志将会十分麻烦。
+</code></pre>
+<p><strong>滚动带来的好处：</strong></p>
+<p>​    假设 日志文件 每超过 1G 或 每过一天 则进行滚动，那么它将会</p>
+<ol>
+<li><p>最直接的好处就是，方便你查找具体某一天所记录的所有日志。因为我可以按日期来为日志文件命名。</p>
+</li>
+<li><p>由于文件不大，索引起来也会相对快许多。</p>
+</li>
+<li><p>当日志文件超过一定数目时，自动丢弃过旧的日志。在日志滚动的过程中，活动日志会以一个新名称命名，例如 log.1，之前被命名为 log.1 的文件则会被重命名为 log.2，依此类推。在这一组文件中，最旧的日志文件（假如名为 log.7）会从系统中删除。</p>
+</li>
+<li><p>由于日志文件之间进行了分离，那么对那些旧的日志可以进行统一归档处理。例如：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ls  /var/log/</span><br><span class="line">log.1</span><br><span class="line">log.2.gz # 经过 tar 归档压缩后的文件</span><br></pre></td></tr></table></figure></li>
+</ol>
+</div></article></div></main><footer><div class="paginator"><a href="/2021/11/08/hexo%E5%8D%9A%E5%AE%A2%E7%A7%BB%E6%A4%8D%E5%88%B0%E5%88%AB%E7%9A%84%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A/" class="prev">上一篇</a><a href="/2021/11/08/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%87%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%96%B9%E6%A1%88%EF%BC%9F/" class="next">下一篇</a></div><div class="copyright"><p>© 2015 - 2021 <a href="https://codroc.github.io">Codroc</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script></body></html>

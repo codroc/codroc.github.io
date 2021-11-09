@@ -34,6 +34,87 @@
   </entry>
   
   <entry>
+    <title>hexo 博客移植到别的服务器上</title>
+    <link href="https://codroc.github.io/2021/11/08/hexo%E5%8D%9A%E5%AE%A2%E7%A7%BB%E6%A4%8D%E5%88%B0%E5%88%AB%E7%9A%84%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A/"/>
+    <id>https://codroc.github.io/2021/11/08/hexo%E5%8D%9A%E5%AE%A2%E7%A7%BB%E6%A4%8D%E5%88%B0%E5%88%AB%E7%9A%84%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A/</id>
+    <published>2021-11-07T16:00:00.000Z</published>
+    <updated>2021-11-09T01:44:22.199Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="hexo-博客移植到别的服务器上"><a href="#hexo-博客移植到别的服务器上" class="headerlink" title="hexo 博客移植到别的服务器上"></a>hexo 博客移植到别的服务器上</h3><p><strong>1. 将你原来电脑上已经配置好并生成的 hexo 目录拷到你的新电脑上</strong></p><p><strong>2. 在你的新电脑上首先配置 hexo 环境：安装 Node.js</strong></p><p><strong>3. 安装 hexo，执行命令：</strong></p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install -g hexo</span><br></pre></td></tr></table></figure><p><strong>4. 安装好之后，进入之前拷贝来的 <code>hexo/source_code/blog</code> 目录</strong></p><p><strong>5. 模块安装，执行命令：</strong></p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">npm install</span><br><span class="line">npm install hexo-deployer-git --save</span><br><span class="line">npm install hexo-generator-feed --save</span><br><span class="line">npm install hexo-generator-sitemap --save</span><br></pre></td></tr></table></figure><p><strong>6. 部署，执行命令：</strong></p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo g</span><br><span class="line">hexo deploy</span><br></pre></td></tr></table></figure>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h3 id=&quot;hexo-博客移植到别的服务器上&quot;&gt;&lt;a href=&quot;#hexo-博客移植到别的服务器上&quot; class=&quot;headerlink&quot; title=&quot;hexo 博客移植到别的服务器上&quot;&gt;&lt;/a&gt;hexo 博客移植到别的服务器上&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;1. 将你原</summary>
+      
+    
+    
+    
+    
+  </entry>
+  
+  <entry>
+    <title>为什么 诊断日志（diagnostic log）需要 滚动（rolling） ？</title>
+    <link href="https://codroc.github.io/2021/11/08/%E4%B8%BA%E4%BB%80%E4%B9%88%E8%AF%8A%E6%96%AD%E6%97%A5%E5%BF%97%E9%9C%80%E8%A6%81%E6%BB%9A%E5%8A%A8/"/>
+    <id>https://codroc.github.io/2021/11/08/%E4%B8%BA%E4%BB%80%E4%B9%88%E8%AF%8A%E6%96%AD%E6%97%A5%E5%BF%97%E9%9C%80%E8%A6%81%E6%BB%9A%E5%8A%A8/</id>
+    <published>2021-11-07T16:00:00.000Z</published>
+    <updated>2021-11-09T01:45:43.648Z</updated>
+    
+    <content type="html"><![CDATA[<h4 id="为什么-诊断日志（diagnostic-log）需要-滚动（rolling）-？"><a href="#为什么-诊断日志（diagnostic-log）需要-滚动（rolling）-？" class="headerlink" title="为什么 诊断日志（diagnostic log）需要 滚动（rolling） ？"></a>为什么 诊断日志（diagnostic log）需要 滚动（rolling） ？</h4><p>日志分为 诊断日志（diagnostic log）和交易日志或事务日志（transaction log）</p><p>前者用于系统软件的信息输出，告知维护人员系统目前的状态等等；后者用于维护数据一致性，常用于文件系统和数据库系统中。</p><p><strong>不滚动带来的影响：</strong></p><p>​    1. 最直接的影响就是，日志文件不断增大，对其操作（例如 append）所花费的时间也会线性增加。文件越大，通过 inode 索引到具体的 disk block 就需要更久的时间，因为后面需要多次索引（多级索引）才能找到那个具体的 disk block，而多次索引则意味着多次读盘。</p><p>​    2. 文件越来越大，占用大量磁盘空间，最终导致无磁盘空间可用。</p><pre><code> 3. 想要找到具体某一天的所有日志将会十分麻烦。</code></pre><p><strong>滚动带来的好处：</strong></p><p>​    假设 日志文件 每超过 1G 或 每过一天 则进行滚动，那么它将会</p><ol><li><p>最直接的好处就是，方便你查找具体某一天所记录的所有日志。因为我可以按日期来为日志文件命名。</p></li><li><p>由于文件不大，索引起来也会相对快许多。</p></li><li><p>当日志文件超过一定数目时，自动丢弃过旧的日志。在日志滚动的过程中，活动日志会以一个新名称命名，例如 log.1，之前被命名为 log.1 的文件则会被重命名为 log.2，依此类推。在这一组文件中，最旧的日志文件（假如名为 log.7）会从系统中删除。</p></li><li><p>由于日志文件之间进行了分离，那么对那些旧的日志可以进行统一归档处理。例如：</p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ls  /var/log/</span><br><span class="line">log.1</span><br><span class="line">log.2.gz # 经过 tar 归档压缩后的文件</span><br></pre></td></tr></table></figure></li></ol>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h4 id=&quot;为什么-诊断日志（diagnostic-log）需要-滚动（rolling）-？&quot;&gt;&lt;a href=&quot;#为什么-诊断日志（diagnostic-log）需要-滚动（rolling）-？&quot; class=&quot;headerlink&quot; title=&quot;为什么 诊断日志（dia</summary>
+      
+    
+    
+    
+    
+  </entry>
+  
+  <entry>
+    <title>为什么采用线程池方案？</title>
+    <link href="https://codroc.github.io/2021/11/08/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%87%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%96%B9%E6%A1%88%EF%BC%9F/"/>
+    <id>https://codroc.github.io/2021/11/08/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%87%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%96%B9%E6%A1%88%EF%BC%9F/</id>
+    <published>2021-11-07T16:00:00.000Z</published>
+    <updated>2021-11-09T01:46:31.444Z</updated>
+    
+    <content type="html"><![CDATA[<h5 id="为什么采用线程池方案？"><a href="#为什么采用线程池方案？" class="headerlink" title="为什么采用线程池方案？"></a>为什么采用线程池方案？</h5><ol><li>采用线程池方案其实就是采用 <strong>单进程多线程</strong> 模式。它能有效利用 <strong>多核资源</strong> 提高吞吐量（qps）。</li><li>能有效降低 <strong>优先级反转</strong> 出现的概率。比如有两个计算任务，task1 需要花 1 ms，task2 需要花 20 ms，根据 <strong>短任务优先原则</strong> 应该先让 task1 使用 CPU；如果是在单线程情况下，task2 事件先到，那么它就会占用 CPU，直到计算完毕才会让出给 task1，这样 task1 的响应时间为 21 ms（有人会说那可以多个单线程进程呀，利用 OS 调度进程来让 task1 得到执行。如果这两个任务是需要共享一些数据的话，IPC 将会十分麻烦，而多线程则在共享数据方面比较简单），task2 的响应时间为 20 ms；如果采用多线程，就算 task1 事件后发生，它也会被分配到空闲的计算线程中去，这样，task1 的响应时间为 1 ms，task2 的响应时间为 20 ms，平均则为 10.5 ms，大大降低了平均响应时间。</li><li>当然，决定了使用多线程，那么自然就可以用线程池来减少线程重复创建销毁所带来的开销。</li></ol>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h5 id=&quot;为什么采用线程池方案？&quot;&gt;&lt;a href=&quot;#为什么采用线程池方案？&quot; class=&quot;headerlink&quot; title=&quot;为什么采用线程池方案？&quot;&gt;&lt;/a&gt;为什么采用线程池方案？&lt;/h5&gt;&lt;ol&gt;
+&lt;li&gt;采用线程池方案其实就是采用 &lt;strong&gt;单进程多线程</summary>
+      
+    
+    
+    
+    
+  </entry>
+  
+  <entry>
+    <title>关于 gettimeofday 是否真的不涉及到系统调用进行记录</title>
+    <link href="https://codroc.github.io/2021/11/08/%E5%85%B3%E4%BA%8Egettimeofday%E6%98%AF%E5%90%A6%E7%9C%9F%E7%9A%84%E4%B8%8D%E6%B6%89%E5%8F%8A%E5%88%B0%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E8%BF%9B%E8%A1%8C%E8%AE%B0%E5%BD%95/"/>
+    <id>https://codroc.github.io/2021/11/08/%E5%85%B3%E4%BA%8Egettimeofday%E6%98%AF%E5%90%A6%E7%9C%9F%E7%9A%84%E4%B8%8D%E6%B6%89%E5%8F%8A%E5%88%B0%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E8%BF%9B%E8%A1%8C%E8%AE%B0%E5%BD%95/</id>
+    <published>2021-11-07T16:00:00.000Z</published>
+    <updated>2021-11-09T01:47:25.373Z</updated>
+    
+    <content type="html"><![CDATA[<h4 id="关于-gettimeofday-是否真的不涉及到系统调用进行记录"><a href="#关于-gettimeofday-是否真的不涉及到系统调用进行记录" class="headerlink" title="关于 gettimeofday 是否真的不涉及到系统调用进行记录"></a>关于 gettimeofday 是否真的不涉及到系统调用进行记录</h4><p>在《Linux多线程服务端编程》一书 5.1 节中提到过，在 x86-64 的 Linux 上，<code>gettimeofday</code> 不是系统调用，不会陷入内核。其实我是对这句话存有疑问的。众所周知想要获得准确的当前时间，就必须要通过内核的全局的计时变量（ticks 或者 jiffies），但是用 strace 查看调用了 <code>gettimeofday</code> 的进程，发现的确没有涉及到系统调用，没有陷入内核。这就奇了怪了，故上网查找，得到以下信息：</p><p>首先， <code>gettimeofday</code> 的确是一个系统调用，因为它所需求的数据是内核所持有的，但它没有走传统的 trap 这条路进入内核，而是利用了 linux 的 vdso（virtual dynamic shared object）机制帮我们做到了在调用这个系统调用时不陷入内核，从而提高了性能。</p><p>这个实现方法其实也是很直觉的（intuitive），在程序装载阶段，装载程序观察到程序有需要 vdso 的相关系统调用，就为其做一下内存映射（将对应的系统调用处理函数所需的指令和数据映射到用户空间中去）。那么用户在调用这些函数时自然就不需要陷入内核啦~~</p><p>如何调用到这些代码呢？直接调用这些系统调用对应的 glibc 包装函数就可以，因为这些 glibc 包装函数默认会使用 vdso。<strong>如果你执意通过 <code>syscall</code> 函数/ <code>syscall</code> 指令/<code>int 0x80</code> 来调用这些系统调用，vdso 是无法生效的，还是会陷入内核。</strong></p><p>当然 vdso 也不保证一定不会陷入内核，有些情况下是会 fallback 的，以 <code>clock_gettime</code> 为例，下面是 linux 4.16 版本中该系统调用在 vdso 中的实现：</p><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line">notrace <span class="keyword">int</span> __vdso_clock_gettime(<span class="keyword">clockid_t</span> clock, struct timespec *ts)</span><br><span class="line">&#123;</span><br><span class="line">    </span><br><span class="line"><span class="keyword">switch</span> (clock) &#123;</span><br><span class="line">    </span><br><span class="line"><span class="keyword">case</span> CLOCK_REALTIME:</span><br><span class="line"><span class="keyword">if</span> (do_realtime(ts) == VCLOCK_NONE)</span><br><span class="line"><span class="keyword">goto</span> fallback;</span><br><span class="line"><span class="keyword">break</span>;</span><br><span class="line"><span class="keyword">case</span> CLOCK_MONOTONIC:</span><br><span class="line"><span class="keyword">if</span> (do_monotonic(ts) == VCLOCK_NONE)</span><br><span class="line"><span class="keyword">goto</span> fallback;</span><br><span class="line"><span class="keyword">break</span>;</span><br><span class="line"><span class="keyword">case</span> CLOCK_REALTIME_COARSE:</span><br><span class="line">do_realtime_coarse(ts);</span><br><span class="line"><span class="keyword">break</span>;</span><br><span class="line"><span class="keyword">case</span> CLOCK_MONOTONIC_COARSE:</span><br><span class="line">do_monotonic_coarse(ts);</span><br><span class="line"><span class="keyword">break</span>;</span><br><span class="line"><span class="keyword">default</span>:</span><br><span class="line"><span class="keyword">goto</span> fallback;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">fallback:</span><br><span class="line"><span class="keyword">return</span> vdso_fallback_gettime(clock, ts);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure><p>其中<code>do_realtime</code>和<code>do_monotonic</code>如果返回值为<code>VCLOCK_NONE</code>的话，就会调用<code>vdso_fallback_gettime</code>，而这个函数是会陷入内核的。另外，<code>clock_gettime</code>的<code>clock</code>参数可不止上面代码中switch里面的4个case，如果我们传入的是<code>CLOCK_BOOTTIME</code>/<code>CLOCK_PROCESS_CPUTIME_ID</code>/<code>CLOCK_THREAD_CPUTIME_ID</code>的话，就会走到default分支，还是会调用<code>vdso_fallback_gettime</code>陷入内核。</p><p>综上所诉，<code>gettimeofday</code>和<code>clock_gettime</code>实际上都是系统调用，但是调用得当的话，可以避免陷入内核，从而提高性能。是否陷入了内核，可以利用 strace 来判断。</p><h4 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h4><ol><li><a href="https://www.i4k.xyz/article/imred/100064061">gettimeofday和clock_gettime是不是系统调用?</a></li><li>muduo</li></ol>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h4 id=&quot;关于-gettimeofday-是否真的不涉及到系统调用进行记录&quot;&gt;&lt;a href=&quot;#关于-gettimeofday-是否真的不涉及到系统调用进行记录&quot; class=&quot;headerlink&quot; title=&quot;关于 gettimeofday 是否真的不涉及到系统调用</summary>
+      
+    
+    
+    
+    
+  </entry>
+  
+  <entry>
     <title>C++ Memory Order</title>
     <link href="https://codroc.github.io/2021/04/26/C++_Memory_Order/"/>
     <id>https://codroc.github.io/2021/04/26/C++_Memory_Order/</id>
