@@ -1,0 +1,102 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> 异步日志系统设计 · Codroc Blog</title><meta name="description" content="异步日志系统设计 - Codroc"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="https://codroc.github.io/atom.xml" title="Codroc Blog"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Codroc Blog" type="application/atom+xml">
+</head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/favicon.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/codroc" target="_blank" class="nav-list-link">GITHUB</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">异步日志系统设计</h1><div class="post-info">2021年11月17日</div><div class="post-content"><p><strong>日志系统设计：</strong></p>
+<p>为什么要自己写一个日志系统？</p>
+<p>因为，网上的日志系统功能十分丰富，而有许多功能在我的项目或未来的项目中是不必要的。尤其是我试用过 spdlog 之后，更加确定了要自己写一个简单的日志系统，spdlog 的确，使用起来十分方便，只要包含头文件的就能用了，但是由于它的引入，编译时间却大大增加了，这大大降低了我的开发效率。。。</p>
+<p>需要实现哪些功能？</p>
+<ol>
+<li>支持日志级别输出：TRACE, INFO, DEBUG, WARN，ERROR，FATAL</li>
+<li>支持控制台和文件做为输出目标</li>
+<li>支持日志滚动（rolling）</li>
+<li>支持多线程</li>
+<li>高性能（由于设计简单，那么就要把性能做到极致），现在好点的固态硬盘读写一般都在 500 MB/s 上下，<strong>最好</strong>日志系统的性能能够到达瞬时写满这个带宽，现在一般日志系统的瓶颈都不在磁盘这了~~。假设一条日志占 100 字节，那么至少要达到每秒写 200 万 条数据的能力（或每条日志 500 ns）。</li>
+<li>用户友好</li>
+</ol>
+<hr>
+<p><strong>如何设计 Roll File 机制？</strong></p>
+<p>其实本质就是当 日志文件 大小 超过设定阈值时，换一个文件写入。说来简单，但是需要考虑，是否需要对原来的日志文件压缩打包，并重命名呢？对于压缩打包和重命名，可以另写一个脚本，在每次 Roll File 时，通过 c++ 去执行这个脚本。</p>
+<p>经过测试后，<strong>结果不尽人意！</strong></p>
+<p>我的实现是：日志后端线程 在 做落盘动作 之前，检查 文件大小 是否即将超过阈值，如果是，则要去 roll file。而 roll file 是通过 日志后端线程 fork 一个子进程来执行 一个 python 脚本 去做 一系列（解压缩日志包，对旧的日志文件重命名，再重新打包压缩）操作。这会导致 后端线程 阻塞等待 脚本完成所有操作。在这段等待的时间内，如果 前端日志量很大，就会导致 后端 Buffer 不够用，那么就会产生大量的 内存分配（分配新的 Buffer） 操作。<strong>最终的结果就是：日志系统在 开启 多个线程时，性能颠簸（thrashing）很大。（见性能分析）</strong></p>
+<p>除此之外，我通过 <code>strace -c loggerTest</code> 发现竟然 futex 占用了 90%+ 的时间。。。这也不知道是为啥？难道就是单纯的 lock contention 导致的？</p>
+<hr>
+<p><strong>如何达到高性能？需要考虑以下几点：</strong></p>
+<ul>
+<li>使用 <strong>直写</strong> 还是 <strong>写回</strong> ？这是在 日志 落盘时 需要考虑的问题。</li>
+<li>日志格式是否可以在 RUN-TIME 修改？</li>
+<li>是否必须实现 异步日志？</li>
+<li>如何查看 日志系统 瓶颈所在？</li>
+</ul>
+<ol>
+<li><p>对于落盘方式是使用 <strong>直写</strong> 还是 <strong>写回</strong> 是很明显的，直写会大量涉及 磁盘IO，严重降低性能，所以采用写回策略。</p>
+<p>写回策略：</p>
+</li>
+</ol>
+<p>​    为了追求高性能，那就不能每写一条日志就落盘，众所周知 磁盘 IO 的速度是很慢的；也不能为了追求性能而迟迟不将日志落盘，这样一旦 日志系统 crash 就会丢失所有日志。</p>
+<p>​    参考 Redis 中三种写回策略：<strong>Always, Everysec 以及 No（由 OS 决定何时写回）</strong>。为了兼顾性能和减少日志数据丢失问题，可以设计成<strong>每隔 3 s 写回一次</strong>。</p>
+<ol start="2">
+<li><p>关于日志格式的问题，在其他的 日志库 实现中，一般都是可以在 RUN-TIME 修改 日志格式 的，但是我认为在我 目前使用日志的环境中，无需做这个功能，用统一的格式已经很简洁明了了。如果未来想要换个格式，重写下 日志制作 的相关模块就行了。</p>
+<p>日志格式不变，那么制作日志时，也就具有较好的局部性了，自然不会出现在切换日志格式时的性能 <strong>颠簸</strong> （thrashing）。</p>
+</li>
+<li><p>为了不让 worker 线程阻塞在 磁盘 IO 上，就应该设计成 异步日志，worker 只需要异步调用一个 flush 函数，就会有另一个 专门用于 日志落盘的 线程 来接收 worker 产生的日志，并在合适时机 落盘。</p>
+</li>
+<li><p>异步日志系统的瓶颈，目前只知道用 strace 去查看用了哪些耗时的系统调用。。。。</p>
+</li>
+</ol>
+<hr>
+<p><strong>如何实现对用户友好？</strong></p>
+<ul>
+<li>输出格式友好</li>
+<li>文件命名友好</li>
+<li>接口友好</li>
+</ul>
+<p><strong>输出格式：</strong> 参考 muduo 的日志输出格式，统一为 <code>日期 时间 线程id 日志级别 源文件名:行号 - 正文</code>，例如</p>
+<p><em>20210603 08:02:46.125770Z 23261 INFO Hello - test.cpp:51</em></p>
+<p><em>20210603 08:02:46.126789Z 23261 WARN World - test.cpp:52</em></p>
+<p><strong>文件命名：</strong> 参照 muduo 的格式，统一为 <code>程序名.日期.进程id.log</code></p>
+<p><strong>接口友好：</strong> 按照流的方式进行输出，例如 <code>LOG_INFO &lt;&lt; &quot;TEST\n&quot;</code></p>
+<hr>
+<p><strong>具体实现：</strong></p>
+<p>日志系统分成前后端，前端制作日志并发送给后端，后端把日志写到目的地（可以是控制台或文件）。</p>
+<p><em>前端设计</em></p>
+<p>​    前端制作完一条日志后是否立即发送给后端？最好不要，由于设计成异步发送，因此每一次发送都会 wakeup 一次后端线程，wakeup 频率太高也会降低系统性能。可以按批次 batch 发，给前端设置一个 Buffer 用于缓存已经制作完成的日志，当缓存满的时候再发送给后端。当然你说在后端也存在个 Buffer 就不需要每次 wakeup 后端线程了，但是多个前端线程频繁争用一个 <strong>后端 Buffer</strong> 也会导致性能下降，因此在前端用缓存在理论上是能减少竞争从而提高性能的。</p>
+<p>​    系统向用户展示的接口是使用 <strong>流</strong> 的方式写日志的，每个 <strong>流</strong> 底层实现其实就是 <strong>Buffer</strong>。由于系统支持多线程，假设前端只有一个 Buffer 用于制作日志，那就会导致多个线程争夺一个 Buffer，这里存在 lock contention，考虑到 日志 产生的频率是比较高的，因此 contention 比较大。</p>
+<p>​    可以设计成，每一个前端线程拥有一个独自的 <strong>流</strong>，这就避免了缓冲时的 race condition。<strong>当然这样设计的性能具体如何还需要验证！</strong>因为磁盘只有一个，最终的落盘操作总是串行执行的！（经过测试发现，性能与线程 能够接近于 1:1 线性相关）</p>
+<p>​    相比较于 muduo，**本日志系统的改进 **是使用全局 logger 避免每制作一条日志都需要 产生 logger 临时对象，进而带来构造析构的开销，除此之外，muduo 是每产生一条日志都会被 push 到日志后端 Buffer 中，这会导致前端线程频繁争用 <strong>后端 Buffer</strong> 带来大量的 lock contention。至于全局的 logger 如何析构，可以添加一个 static 函数 release 来释放 logger 资源，让 LoggerWatcher 负责调用 Logger::release，这样在 release 中还能刷新以下缓冲，不至于 丢失日志。</p>
+<blockquote>
+<p>注意：日志后端一定要先于日志前端 构造，这样日志系统退出时，前端先退出，就会把前端 Buffer 中的日志刷新到 后端 Buffer 然后 append 到目的地。反之将会丢失前端的日志数据！</p>
+</blockquote>
+<p><em>后端设计</em></p>
+<p>​    这里的关键就在于，<strong>如何做好日志系统的前后端交互。</strong> </p>
+<p>​    如何把日志前端缓冲的数据传递给日志后端？阻塞队列可以做到，如果实现成，多个前端线程写日志，只有一个阻塞队列，那么就会产生明显的 lock contention 问题，该问题会随着每秒日志量的增大而变得明显起来；当然如果日志量小，自动触发 3 s 一刷新机制，那么 lock contention 占用的时间与 3 s 对比起来可能会不明显。也可以使用共享 Buffer，前端把日志全部往一个缓冲区写，后端读这个缓冲区，一样，lock contention 依然存在。。。。（经过测试，strace 显示的确会产生大量的 futex 调用）</p>
+<p>​    目前设计为，通过前后端 共享一个 Buffer 的方式来实现交互。也就是说，前端产生的日志会 刷新到 后端 Buffer 中，而后端 也会在 合适的时机 将 Buffer 中的内容 落盘，这就需要加锁了！所以必然产生 critical section，而重点便是 让 critical section 执行时间越少越好。因此一些 内存分配或回收 必然不能在这里做了！具体的实现是，提前分配好 Buffer 以及备用的 Buffer，在 critical section 通过 swap 来交换已经占满的 Buffer 与 备用 Buffer，然后快速地走出 critical section，让前端能够及时拿到锁。</p>
+<p>​    目前的实现，roll file 也是通过 日志后端线程 fork 出一个 子进程 去执行脚本实现的，这会使得 后端线程被阻塞而无法及时 分配/回收 内存，而需要前端自己去 分配内存，最终导致 日志系统性能颠簸（thrashing）。</p>
+<hr>
+<p><strong>性能分析：</strong></p>
+<p>在 8 核 （Intel(R) Core(TM) i7-9700 CPU @ 3.00GHz）虚拟机上，进行多线程 日志系统 性能分析；<strong>一个后端线程 + 一个主线程 + 多个前端线程</strong> 的结构，因为只有 8 个核，因此只测试 1~6 个前端线程的情况：</p>
+<p>(1 thread)  Average of throughput: 217.811256 MB/s</p>
+<p>(2 threads) Average of throughput: 425.770968 MB/s</p>
+<p>(3 threads) Average of throughput: 605.174501 MB/s</p>
+<p>(4 threads) Average of throughput: 768.463506 MB/s</p>
+<p>这里展开 看一下，可以看到 性能 颠簸 很大！</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">average time: 839.454355 MB/s #</span><br><span class="line">average time: 827.472073 MB/s #</span><br><span class="line">average time: 771.604938 MB/s</span><br><span class="line">average time: 633.713561 MB/s</span><br><span class="line">average time: 806.126562 MB/s #</span><br><span class="line">average time: 803.212851 MB/s #</span><br><span class="line">average time: 782.932081 MB/s</span><br><span class="line">average time: 803.535556 MB/s #</span><br><span class="line">average time: 775.644755 MB/s</span><br><span class="line">average time: 740.740741 MB/s</span><br><span class="line">average time: 812.017864 MB/s #</span><br><span class="line">average time: 811.688312 MB/s #</span><br><span class="line">average time: 834.376304 MB/s #</span><br><span class="line">average time: 794.438928 MB/s</span><br><span class="line">average time: 741.702207 MB/s</span><br><span class="line">average time: 768.935025 MB/s</span><br><span class="line">average time: 768.787238 MB/s</span><br><span class="line">average time: 793.808295 MB/s #</span><br><span class="line">average time: 700.157535 MB/s </span><br><span class="line">average time: 742.528309 MB/s</span><br></pre></td></tr></table></figure>
+
+<p>(5 threads) Average of throughput: 949.295990 MB/s</p>
+<p>(6 threads) Average of throughput: 1054.405436 MB/s</p>
+<p>可以看到随着线程数的增加，性能增长在变慢，这是因为 <strong>激烈的 lock contention 以及 内存分配开销</strong> 造成的。</p>
+<p><strong>可以改进的地方：</strong></p>
+<ol>
+<li><p>增加一个 emptyBuffers，buffer 被填满时，从中获取空闲 buffer，减少内存分配带来的开销。参考 muduo P120 图5-5；但是我实现了之后还没有原来的快。。。不知道是不是我的问题~~~~</p>
+</li>
+<li><p>改进 前后端交互接口，实现一个 lock contention 较少的方法。也可以参考 muduo P120 的想法。待实现。。。（由于 日志系统 很难成为项目中的瓶颈，所以现在还没必要 去费尽心思 设计一个 接近 无锁 的数据结构，以后有需要再说吧，哎~~~~）</p>
+</li>
+</ol>
+<hr>
+<p><strong>日志系统调用接口说明：</strong></p>
+<h3 id="log"><a href="#log" class="headerlink" title="log"></a>log</h3><p><strong>Multi-threaded asynchronous log library</strong></p>
+<p>If appender is the stdout:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&quot;flog.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    LOG_WARN &lt;&lt; <span class="string">&quot;hello\n&quot;</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>If appender is a file:</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&quot;flog.h&quot;</span></span></span><br><span class="line"></span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">    AsyncLogInit <span class="built_in">log</span>; <span class="comment">// initial async log.</span></span><br><span class="line">    ···</span><br><span class="line">    <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>;i &lt; <span class="number">100</span>;++i)</span><br><span class="line">    	LOG_WARN &lt;&lt; <span class="string">&quot;hello&quot;</span> &lt;&lt; i &lt;&lt; <span class="string">&quot;\n&quot;</span>;</span><br><span class="line">    ···</span><br><span class="line">    <span class="built_in">log</span>.destroy(); <span class="comment">// AsyncLogInit::destroy must be called before exit!</span></span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<hr>
+</div></article></div></main><footer><div class="paginator"><a href="/2021/11/08/cmake_template/" class="next">下一篇</a></div><div class="copyright"><p>© 2015 - 2021 <a href="https://codroc.github.io">Codroc</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script></body></html>
