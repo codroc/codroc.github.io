@@ -2,13 +2,6 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>https://codroc.github.io/2021/12/14/cmake_template/</loc>
-    
-    <lastmod>2021-12-14</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>https://codroc.github.io/2021/12/14/%E9%85%8D%E7%BD%AE%E7%B3%BB%E7%BB%9F/</loc>
     
     <lastmod>2021-12-14</lastmod>
@@ -75,6 +68,13 @@
     <loc>https://codroc.github.io/2021/09/18/lab2trap%E7%9A%84%E6%97%85%E9%80%94/</loc>
     
     <lastmod>2021-11-09</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://codroc.github.io/2021/12/14/cmake_template/</loc>
+    
+    <lastmod>2021-12-14</lastmod>
     
   </url>
   
