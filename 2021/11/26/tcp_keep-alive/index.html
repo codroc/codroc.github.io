@@ -17,15 +17,15 @@
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> cat /proc/sys/net/ipv4/tcp_keepalive_time</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> cat /proc/sys/net/ipv4/tcp_keepalive_probes</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> cat /proc/sys/net/ipv4/tcp_keepalive_intvl</span></span><br></pre></td></tr></table></figure>
 
 <p>或 通过 sysctl 查看</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sysctl -a | grep keepalive</span></span><br></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sysctl -A | grep keepalive</span></span><br></pre></td></tr></table></figure>
 
-<h4 id="TCP-保活机制试验："><a href="#TCP-保活机制试验：" class="headerlink" title="TCP 保活机制试验："></a>TCP 保活机制试验：</h4><p>首先将 <strong>tcp_keepalive_time</strong> 设置为 10，即 10s 内 连接上没有数据收发就启动 间隔定时器；</p>
+<h4 id="TCP-保活机制试验："><a href="#TCP-保活机制试验：" class="headerlink" title="TCP 保活机制试验："></a>TCP 保活机制试验：</h4><p>首先将 <strong>tcp_keepalive_time</strong> 设置为 20，即 20s 内 连接上没有数据收发就启动 间隔定时器；</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">echo</span> 20 | sudo tee /proc/sys/net/ipv4/tcp_keepalive_time</span></span><br></pre></td></tr></table></figure>
 
-<p>将 <strong>tcp_keepalive_intvl</strong> 设置为 5，即如果连接不活跃，则每 5s 发送一个探测报文；</p>
+<p>将 <strong>tcp_keepalive_intvl</strong> 设置为 5，即如果连接不活跃(开启定时器后，发送一个探测报文，但是没收到响应)，则每 5s 发送一个探测报文；</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">echo</span> 5 | sudo tee /proc/sys/net/ipv4/tcp_keepalive_intvl</span></span><br></pre></td></tr></table></figure>
 
-<p>将 <strong>tcp_keepalive_probes</strong> 设置为 2，即如果 发出探测报文后 对端没有回应再重复发 1次；</p>
+<p>将 <strong>tcp_keepalive_probes</strong> 设置为 2。即如果 发出探测报文后 对端没有回应则重复发送探测报文的次数。</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">echo</span> 2 | sudo tee /proc/sys/net/ipv4/tcp_keepalive_probes</span></span><br></pre></td></tr></table></figure>
 
 <blockquote>

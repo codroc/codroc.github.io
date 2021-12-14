@@ -9,13 +9,6 @@
   </url>
   
   <url>
-    <loc>https://codroc.github.io/2021/11/26/tcp_keep-alive/</loc>
-    
-    <lastmod>2021-11-27</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>https://codroc.github.io/2021/11/25/reactor_pattern/</loc>
     
     <lastmod>2021-11-25</lastmod>
@@ -72,6 +65,13 @@
   </url>
   
   <url>
+    <loc>https://codroc.github.io/2021/09/07/lab1find/</loc>
+    
+    <lastmod>2021-11-09</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://codroc.github.io/2021/12/14/cmake_template/</loc>
     
     <lastmod>2021-12-14</lastmod>
@@ -79,9 +79,9 @@
   </url>
   
   <url>
-    <loc>https://codroc.github.io/2021/09/07/lab1find/</loc>
+    <loc>https://codroc.github.io/2021/11/26/tcp_keep-alive/</loc>
     
-    <lastmod>2021-11-09</lastmod>
+    <lastmod>2021-11-25</lastmod>
     
   </url>
   
