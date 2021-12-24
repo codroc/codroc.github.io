@@ -100,6 +100,13 @@
   </url>
   
   <url>
+    <loc>https://codroc.github.io/2021/12/14/cmake_templates/</loc>
+    
+    <lastmod>2021-12-14</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://codroc.github.io/2021/04/26/C++_Memory_Order/</loc>
     
     <lastmod>2021-04-27</lastmod>
@@ -142,16 +149,16 @@
   </url>
   
   <url>
-    <loc>https://codroc.github.io/2021/12/14/cmake_templates/</loc>
+    <loc>https://codroc.github.io/2021/12/24/MVCC/</loc>
     
-    <lastmod>2021-12-14</lastmod>
+    <lastmod>2021-12-23</lastmod>
     
   </url>
   
 
   <url>
     <loc>https://codroc.github.io/</loc>
-    <lastmod>2021-12-14</lastmod>
+    <lastmod>2021-12-24</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
