@@ -47,6 +47,11 @@
 </ul>
 <p><strong>分析：</strong></p>
 <p>协程比线程快这是不言而喻的，但是线程上表现出来的数值就很奇怪了，在 1 Core 的鲲鹏虚拟机上 切换一次线程费时 大约 3微秒；但在更快的 i7-9700 CPU 虚拟机上却要 32微秒；这是为什么呢？</p>
+<p>其实这两台实验设备上最大的差别就是<strong>一个是单核一个是多核</strong>。多个核共享一个变量，并把变量保存在 cacheline 中，当某个核要对该变量进行读写操作时，就要保证能看到其他核的 cacheline 中关于该变量的最新的值。这就存在 cacheline 同步的问题，只能等待 CPU 完成<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Cache_coherence">一致性同步</a>之后才能继续用户操作。这就导致速度变得很慢。</p>
+<p><strong>至理名言：</strong>要提高性能，就要避免让CPU频繁同步cacheline。这不单和原子指令本身的性能有关，还会影响到程序的整体性能。最有效的解决方法很直白：<strong>尽量避免共享</strong>。                                                        —–bRPC</p>
+<blockquote>
+<p>一个相关的编程陷阱是false sharing：对那些不怎么被修改甚至只读变量的访问，由于同一个cacheline中的其他变量被频繁修改，而不得不经常等待cacheline同步而显著变慢了。多线程中的变量尽量按访问规律排列，频繁被其他线程修改的变量要放在独立的cacheline中。要让一个变量或结构体按cacheline对齐</p>
+</blockquote>
 <hr>
 <p><strong>存在的问题：</strong></p>
 <p>如果用户调用 swapIn 和 swapOut 的顺序不对，可能会导致 Fiber 对象无法正常释放资源，导致资源泄露。因此要设计一个自动回收永远不会再用到的 Fiber 对象的类。</p>
