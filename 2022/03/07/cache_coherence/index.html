@@ -1,0 +1,46 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> cache coherence · Codroc Blog</title><meta name="description" content="cache coherence - Codroc"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="https://codroc.github.io/atom.xml" title="Codroc Blog"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Codroc Blog" type="application/atom+xml">
+</head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/favicon.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/codroc" target="_blank" class="nav-list-link">GITHUB</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">cache coherence</h1><div class="post-info">2022年3月7日</div><div class="post-content"><h2 id="Cache-Coherence"><a href="#Cache-Coherence" class="headerlink" title="Cache Coherence"></a>Cache Coherence</h2><p>​    cache coherence 也就是 cache 一致性问题，首先解释下这个问题为什么会存在。</p>
+<h3 id="Cache-存在的必要性"><a href="#Cache-存在的必要性" class="headerlink" title="Cache 存在的必要性"></a>Cache 存在的必要性</h3><p>​    众所周知，CPU 频率远大于内存频率，那么具体大多少呢？可以看这篇文章哦~~<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/98560121">《CPU到底有多快？内存：是我的250倍》</a>。我记得是拉跨的 CPU 都能在 1/3 ns 内执行完一条简单指令，而一次访存操作至少要 80 ns。</p>
+<p>​    那么我们听到的什么 DDR4-3200-1600MHZ 是什么意思呢？3200 是指传输速率为 3.2Gbit/s，而 1600MHZ 是指接口总线频率，其工作频率实质只有 400MHZ（接口频率是工作频率的 4 倍了）。如果 2GHZ 的 CPU 算接口频率的话，集成PCI-e 3.0控制器的 CPU，接口频率可是 8 GHz；4.0的则是 16 GHz。除此之外，总线也可能造成瓶颈。</p>
+<p>​    由于 CPU 和内存之间存在着处理能力鸿沟，因此 Cache 就应运而生了（访问 cache 大概在 1ns 吧）。</p>
+<p>写 Cache 的两种策略：</p>
+<ul>
+<li>直写</li>
+<li>写回</li>
+</ul>
+<p><strong>直写的逻辑</strong>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(数据不在 Cacheline 中) &#123;</span><br><span class="line">    直接写到内存中去;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">	写 Cacheline;</span><br><span class="line">    写 内存;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><strong>写回的逻辑</strong>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">if</span>(数据在 Cacheline 中) &#123;</span><br><span class="line">    直接写 Cache;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">else</span> &#123;</span><br><span class="line">    <span class="keyword">if</span>(当前 Cacheline 是脏的) &#123;</span><br><span class="line">        将 Cacheline 中的数据写回到内存;</span><br><span class="line">    &#125;</span><br><span class="line">	从内存中加载数据到 Cacheline;</span><br><span class="line">    写 Cacheline;</span><br><span class="line">&#125;</span><br><span class="line">将 Cacheline 标记为脏;</span><br></pre></td></tr></table></figure>
+
+<h3 id="多核导致的-Cache-不一致现象"><a href="#多核导致的-Cache-不一致现象" class="headerlink" title="多核导致的 Cache 不一致现象"></a>多核导致的 Cache 不一致现象</h3><p>现有两个核心 A,B，每个核心有自己独属的 Cache。它们都读取一个共享变量 i，并用<strong>写回策略</strong>对 i 进行 ++ 操作，整个流程可以用下图表示：</p>
+<p><img src="https://s4.ax1x.com/2022/03/05/b01IMt.png"></p>
+<p>由于它们都在 i = 0 时缓存了 i，并对 i 做 ++ 操作，因此最终将会导致 i = 1 而非 2；原因在于 A 核心执行 i++ 后没有将结果同步到 B 核心缓存的 i 变量上面去，也就是 i 这个共享变量的一致性遭到了破坏。</p>
+<p>那么如何解决这个问题呢？最简单的想法就是，<strong>最好我修改之前看到的变量已经是最新的了，在我修改之后立马让所有核心看到最新的值</strong>。</p>
+<ul>
+<li>第一点，某个 CPU 核心里的 Cache 数据更新时，必须要传播到其他核心的 Cache，这个称为<strong>写传播（<em>Write Propagation</em>）</strong></li>
+<li>第二点，某个 CPU 核心里对数据的操作顺序，必须在其他核心看起来顺序是一样的，这个称为<strong>事务的串形化（<em>Transaction Serialization</em>）</strong>。</li>
+</ul>
+<h3 id="MESI-协议-总线嗅探机制-实现-写传播和事务串行化"><a href="#MESI-协议-总线嗅探机制-实现-写传播和事务串行化" class="headerlink" title="MESI 协议 + 总线嗅探机制 实现 写传播和事务串行化"></a>MESI 协议 + 总线嗅探机制 实现 写传播和事务串行化</h3><p>​    下图是 CPU Cache 的概览图，Cache 可以分成多个 Cacheline，每个 Cacheline 里有一个 Tag 和一个数据块。<strong>其实除此之外，还记录了当前 Cacheline 与物理地址之间的映射</strong>。Tag 中有四种标记：</p>
+<ul>
+<li>M: Modified</li>
+<li>E: Exclude</li>
+<li>S: Shared</li>
+<li>I: Invalid</li>
+</ul>
+<p><img src="https://s1.ax1x.com/2022/03/07/b6ABVg.png"></p>
+<p>​    <strong>总线嗅探机制</strong>，wiki 解释：<strong>Bus snooping</strong> or <strong>bus sniffing</strong> is a scheme by which a coherency controller (snooper) in a <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Cache_(computing)">cache</a> (a <strong>snoopy cache</strong>) monitors or snoops the bus transactions, and its goal is to maintain a <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Cache_coherence">cache coherency</a> in <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Distributed_shared_memory">distributed shared memory systems</a>.</p>
+<blockquote>
+<p><strong>How it works?</strong> When specific data is shared by several caches and a processor modifies the value of the shared data, the change must be propagated to all the other caches which have a copy of the data. This change propagation prevents the system from violating <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Cache_coherence">cache coherency</a>. The notification of data change can be done by bus snooping. All the snoopers monitor every transaction on a bus. If a transaction modifying a shared cache block appears on a bus, all the snoopers check whether their caches have the same copy of the shared block. If a cache has a copy of the shared block, the corresponding snooper performs an action to ensure cache coherency. The action can be a <a target="_blank" rel="noopener" href="https://forums.xilinx.com/t5/Embedded-Development-Tools/what-is-the-difference-between-cache-invalidate-and-cache-flush/td-p/74654">flush</a> or an <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Cache_invalidation">invalidation</a> of the cache block. It also involves a change of cache block state depending on the cache coherence protocol.</p>
+</blockquote>
+<p>​    其实上面的意思是当<strong>被多个核心中的 Cache 共享的数据</strong>将要发生改变时，这个<strong>即将发生改变的通知</strong>会通过总线广播到所有核心并被 Cache 中的嗅探器捕捉到，随后做出一系列操作来保证 Cache 一致性。所以这里嗅探器其实会查看自己是否拥有这个共享数据，据推断就是通过 Cacheline 与物理地址之间的映射来做判断的。</p>
+<p>​    <strong>MESI 协议</strong>是 cache 一致性协议中的一种，也比较好理解。它借助 Cacheline 中的 Tag 标记以及 总线嗅探机制实现了一个状态机，从而实现<strong>写传播</strong>和<strong>事务串行化</strong>。</p>
+<p>​    MESI 每一个标记都是一种状态，那么就有 4 种状态；每一种状态下，嗅探器都可能从总线上嗅探到 4 种通知：local read，local write，remote read，remote write（其实就是 local，remote 和 read，write 的排列组合）。某个核心中共享的 Cacheline 会根据自己所处的状态以及嗅探到的通知来进行状态之间的转换：</p>
+<p><img src="https://s1.ax1x.com/2022/03/07/b6u1yR.png"></p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ol>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/98560121">《CPU到底有多快？内存：是我的250倍》</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.zhihu.com/question/349982942">内存运行速度</a></li>
+<li><a target="_blank" rel="noopener" href="https://blog.csdn.net/qq_34827674/article/details/109317760">10 张图打开 CPU 缓存一致性的大门</a></li>
+</ol>
+</div></article></div></main><footer><div class="paginator"><a href="/2022/02/27/Fiber/" class="next">下一篇</a></div><div class="copyright"><p>© 2015 - 2022 <a href="https://codroc.github.io">Codroc</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script></body></html>
