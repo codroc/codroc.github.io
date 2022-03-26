@@ -1,0 +1,75 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> Dynamic Link · Codroc Blog</title><meta name="description" content="Dynamic Link - Codroc"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="https://codroc.github.io/atom.xml" title="Codroc Blog"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Codroc Blog" type="application/atom+xml">
+</head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/favicon.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/codroc" target="_blank" class="nav-list-link">GITHUB</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">Dynamic Link</h1><div class="post-info">2022年3月26日</div><div class="post-content"><h1 id="Dynamic-Link"><a href="#Dynamic-Link" class="headerlink" title="Dynamic Link"></a>Dynamic Link</h1><h4 id="静态链接的缺陷"><a href="#静态链接的缺陷" class="headerlink" title="静态链接的缺陷"></a>静态链接的缺陷</h4><ul>
+<li>浪费内存和磁盘空间</li>
+<li>模块更新困难</li>
+</ul>
+<p>​    由于静态链接会把模块代码全部链接进入可执行文件，可想而知，可执行文件将会变得比较大（想象一下，每个程序内部除了保留着 printf()，scanf()，strlen() 等这样的公共函数，还有很多数量可观的其他库函数，这会使得程序变得多么庞大，而这么庞大的程序不光浪费了磁盘，当他需要被执行时，也会被加载到内存从而浪费大量内存）。<strong>在静态链接中，C 语言静态库是一个很典型的浪费空间的例子。</strong></p>
+<p>​    除此之外，静态链接由于已经把所有模块全部放进可执行文件了，一旦程序中有任何模块更新，整个程序就要重新链接。</p>
+<p>​    拿 LOL 举例，我们知道它是频繁更新的程序，并且不提供源代码。如果它采用静态链接，那么每一次更新后，我们就要把老版本的卸载了，从官网下载新版本的 LOL，这不光浪费时间，而且大大浪费了网络带宽，要知道很多人玩这游戏的，那么它每一次更新都可能导致网络负载大大增加（因为每个人都在那一天重新下载最新版本的 LOL），可能会导致网络瘫痪的（故意夸张了下~~）；如果采用动态链接的话，只需要下载补丁就可以了。</p>
+<h4 id="动态链接基本思想"><a href="#动态链接基本思想" class="headerlink" title="动态链接基本思想"></a>动态链接基本思想</h4><p><strong>把程序模块相互分割开来而不是静态地链接在一起。把链接的过程推迟到运行时在进行。</strong></p>
+<h5 id="优点："><a href="#优点：" class="headerlink" title="优点："></a>优点：</h5><ul>
+<li>节省磁盘和内存空间</li>
+<li>使得程序的更新更加容易且友好</li>
+<li>模块更加独立，耦合性更加小，增加程序的兼容性</li>
+<li>可以减少换入换出，也可以增加 Cache 命中率，因为不同进程间地数据和指令都集中在了同一个共享模块上</li>
+</ul>
+<blockquote>
+<p>其实 Plug-in 插件就是采用了动态链接的思想实现出来的</p>
+</blockquote>
+<p>Q1：如何理解 3？</p>
+<p>A1：举个例子吧。比如操作系统 A 和操作系统 B 对于 printf 的实现是不一样的，如果采用静态链接，那么必须要有两份可执行文件，分别能够在两个 OS 上运行。如果采用动态链接，只要 OS A 和 OS B 都提供了一个动态链接库包含了 printf，并且这个 printf 使用了相同的接口，那么程序只需要一个版本，就能在两个操作系统上运行，动态地选择相应的 printf 的实现版本。其实可以这样想，我现在有一个充电器，房子 A 和 房子 B 的插座都是一个样的，且充电器都能插进去，那么不管我去哪个房子都能充电。房子 A 插座后面的电是通过太阳能发电得到的；而房子 B 插座后面的电是通过火力发电得到的。虽然发电方式不一样，但是充电器插头能插进插座，并且有电，我们就能充电了。</p>
+<p>Q2：如何理解 4？</p>
+<p>A2：因为采用动态链接，同样的指令在内存中只存在一份，这样 Cache 就不会因为查看到物理地址不一样而不命中了。</p>
+<h5 id="缺点："><a href="#缺点：" class="headerlink" title="缺点："></a>缺点：</h5><ul>
+<li>由于把程序的链接推迟到了装载的时候，不可避免地导致了程序装载速度变慢（可以通过 lazy binding 优化），因为引入了一堆 “胶水” 代码来把共享库粘到原来的进程空间中去。</li>
+<li>可执行程序依赖于能够兼容的共享库。在运行时找不到共享库或者版本不兼容，都会导致运行时错误。</li>
+<li>由于动态库是在可执行文件装载时确定它们所在的进程虚拟地址空间位置的，因此它们可能广泛地分布在虚拟地址空间中，而不是在同一处，这会导致空间的局部性变差，emmm 主要还是从 TLB 缓冲失效的角度影响性能。</li>
+</ul>
+<h1 id="查看动态库相关信息的命令"><a href="#查看动态库相关信息的命令" class="headerlink" title="查看动态库相关信息的命令"></a>查看动态库相关信息的命令</h1><p>用 g++ 创建一个共享库 <code>b.so</code>：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> g++ -fPIC -shared -o b.so b.cpp</span></span><br></pre></td></tr></table></figure>
+
+<p>创建一个依赖于 <code>b.so</code> 的共享库 <code>hello.so</code>：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> g++ -fPIC -shared -Wl,-rpath=. -o hello.so b.so hello.cpp</span></span><br></pre></td></tr></table></figure>
+
+<p>编译一个依赖于  <code>hello.so</code> 的程序 <code>test_shared_map</code>：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> g++ test_shared_map.cpp hello.so b.so -o test_shared_map -Wl,-rpath=.</span></span><br></pre></td></tr></table></figure>
+
+
+
+<p>查看一个程序链接了哪些共享库：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ldd test_shared_map</span></span><br><span class="line">        linux-vdso.so.1 (0x0000ffffbab40000)</span><br><span class="line">        hello.so =&gt; ./hello.so (0x0000ffffbaaee000)</span><br><span class="line">        b.so =&gt; ./b.so (0x0000ffffbaadc000)</span><br><span class="line">        libstdc++.so.6 =&gt; /lib/aarch64-linux-gnu/libstdc++.so.6 (0x0000ffffba951000)</span><br><span class="line">        libm.so.6 =&gt; /lib/aarch64-linux-gnu/libm.so.6 (0x0000ffffba894000)</span><br><span class="line">        libgcc_s.so.1 =&gt; /lib/aarch64-linux-gnu/libgcc_s.so.1 (0x0000ffffba870000)</span><br><span class="line">        libc.so.6 =&gt; /lib/aarch64-linux-gnu/libc.so.6 (0x0000ffffba6fe000)</span><br><span class="line">        /lib/ld-linux-aarch64.so.1 (0x0000ffffbab12000)</span><br></pre></td></tr></table></figure>
+
+<p>查看程序的 RPATH：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> chrpath -l test_shared_map</span></span><br><span class="line">test_shared_map: RUNPATH=.</span><br></pre></td></tr></table></figure>
+
+
+
+<p>查看 hello.so 共享库的 <code>.got</code>  和 <code>.got.plt</code></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> objdump -h hello.so | grep got</span></span><br><span class="line"> 18 .got          00000048  0000000000010fa0  0000000000010fa0  00000fa0  2**3</span><br><span class="line"> 19 .got.plt      00000050  0000000000010fe8  0000000000010fe8  00000fe8  2**3</span><br></pre></td></tr></table></figure>
+
+<p>查看 hello.so 共享库的重定位表</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> objdump -R hello.so | less</span></span><br><span class="line">0000000000010fa8 R_AARCH64_GLOB_DAT  _ZSt4endlIcSt11char_traitsIcEERSt13basic_ostreamIT_T0_ES6_@GLIBCXX_3.4</span><br><span class="line">0000000000010fb0 R_AARCH64_GLOB_DAT  __cxa_finalize@GLIBC_2.17</span><br><span class="line">0000000000010fb8 R_AARCH64_GLOB_DAT  _ZSt4cout@GLIBCXX_3.4</span><br><span class="line">0000000000010fc0 R_AARCH64_GLOB_DAT  b</span><br><span class="line">0000000000010fc8 R_AARCH64_GLOB_DAT  _ITM_deregisterTMCloneTable</span><br><span class="line">0000000000010fd0 R_AARCH64_GLOB_DAT  __gmon_start__</span><br><span class="line">0000000000010fd8 R_AARCH64_GLOB_DAT  _ITM_registerTMCloneTable</span><br><span class="line">0000000000010fe0 R_AARCH64_GLOB_DAT  _ZNSt8ios_base4InitD1Ev@GLIBCXX_3.4</span><br><span class="line">0000000000011000 R_AARCH64_JUMP_SLOT  __cxa_finalize@GLIBC_2.17</span><br><span class="line">0000000000011008 R_AARCH64_JUMP_SLOT  _ZStlsISt11char_traitsIcEERSt13basic_ostreamIcT_ES5_PKc@GLIBCXX_3.4</span><br><span class="line">0000000000011010 R_AARCH64_JUMP_SLOT  _ZNSolsEPFRSoS_E@GLIBCXX_3.4</span><br><span class="line">0000000000011018 R_AARCH64_JUMP_SLOT  __cxa_atexit@GLIBC_2.17</span><br><span class="line">0000000000011020 R_AARCH64_JUMP_SLOT  _ZNSt8ios_base4InitC1Ev@GLIBCXX_3.4</span><br><span class="line">0000000000011028 R_AARCH64_JUMP_SLOT  _ZNSolsEi@GLIBCXX_3.4</span><br><span class="line">0000000000011030 R_AARCH64_JUMP_SLOT  __gmon_start__</span><br></pre></td></tr></table></figure>
+
+<p>可以看到 <code>R_AARCH64_GLOB_DAT</code> 类型的变量每个占 8 个字节，并且在 0000000000010fb0~0000000000010fe0 范围内，正好这段区域在 <code>.got</code> 的区域内。而 <code>R_AARCH64_JUMP_SLOT</code> 每个也占 8 个字节，且正好都在 <code>.got.plt</code> 的区域内。</p>
+<p>查看进程 <code>test_shared_map</code> 虚拟地址空间的映射关系：</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> ./test_shared_map &amp;</span></span><br><span class="line">[1] 27652</span><br><span class="line"><span class="meta">$</span><span class="bash"> cat /proc/27652/maps</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="https://s1.ax1x.com/2022/03/15/bj44gJ.png"></p>
+<p>可以看到这个进程的地址空间的分布</p>
+<p>OS 把进程的虚拟地址空间分配给了：</p>
+<ul>
+<li>可执行文件：<code>/home/cwp/test/test_shared_map</code></li>
+<li>堆栈：<code>[heap]</code>、<code>[stack]</code></li>
+<li>共享库：<code>/home/cwp/test/b.so</code>、<code>/usr/lib/aarch64-linux-gnu/libc-2.28.so</code>、<code>/usr/lib/aarch64-linux-gnu/libgcc_s.so.1</code>、<code>/usr/lib/aarch64-linux-gnu/libm-2.28.so</code>、<code>/usr/lib/aarch64-linux-gnu/libstdc++.so.6.0.25</code>、<code>/home/cwp/test/hello.so</code>、<code>/usr/lib/aarch64-linux-gnu/ld-2.28.so</code></li>
+<li>绕开陷入内核，加速系统调用：<code>[vdso]</code>、<code>[vvar]</code> （具体看我文章。。。。。）</li>
+<li>匿名映射（内存到磁盘）：mmap</li>
+</ul>
+<p>其实通过 proc 这个文件系统就能很清楚的得知进程的虚拟地址的分布情况，这里栈空间仅仅只有 132KB，出乎意料的小。。。。堆空间也只有 132KB，但是堆可以增大（向系统申请）呀，栈却不能变大了呀。。。系统也太抠了。。。</p>
+<h1 id="何时使用静态库何时使用动态库？"><a href="#何时使用静态库何时使用动态库？" class="headerlink" title="何时使用静态库何时使用动态库？"></a>何时使用静态库何时使用动态库？</h1><p>如果该库不经常更新，并且不被多数的可执行文件共享，那些就应该把他们编译成 static ！</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ol>
+<li><p>程序员的自我修养——链接、装载与库</p>
+</li>
+<li><p><a target="_blank" rel="noopener" href="https://www.ibm.com/docs/en/aix/7.2?topic=techniques-when-use-dynamic-linking-static-linking">When to use dynamic linking and static linking</a></p>
+</li>
+</ol>
+</div></article></div></main><footer><div class="paginator"><a href="/2022/03/21/leetcode/" class="next">下一篇</a></div><div class="copyright"><p>© 2015 - 2022 <a href="https://codroc.github.io">Codroc</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script></body></html>
