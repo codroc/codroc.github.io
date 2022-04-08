@@ -6,7 +6,7 @@
   <link href="https://codroc.github.io/atom.xml" rel="self"/>
   
   <link href="https://codroc.github.io/"/>
-  <updated>2022-04-02T11:57:16.000Z</updated>
+  <updated>2022-04-08T11:57:16.000Z</updated>
   <id>https://codroc.github.io/</id>
   
   <author>
@@ -15,6 +15,26 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>面试手撕算法记录</title>
+    <link href="https://codroc.github.io/2022/04/08/%E9%9D%A2%E8%AF%95%E6%89%8B%E6%92%95%E7%AE%97%E6%B3%95/"/>
+    <id>https://codroc.github.io/2022/04/08/%E9%9D%A2%E8%AF%95%E6%89%8B%E6%92%95%E7%AE%97%E6%B3%95/</id>
+    <published>2022-04-08T11:57:16.000Z</published>
+    <updated>2022-04-08T11:57:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="手撕算法记录"><a href="#手撕算法记录" class="headerlink" title="手撕算法记录"></a>手撕算法记录</h1><h3 id="4-月-8-日-华为云"><a href="#4-月-8-日-华为云" class="headerlink" title="4 月 8 日 华为云"></a>4 月 8 日 华为云</h3><p>给定一个 n 位的 01 串，提供两种变换方法：00–&gt;10，10–&gt;01</p><p>样例：</p><p>0010 –&gt; 1101</p><ol><li>0010–&gt;1010</li><li>1010–&gt;1001</li><li>1001–&gt;1101</li></ol><p>碰到的难题：10 可能会变到 01；什么情况下回去这么变，是为了让 00 变成 10；</p><p>刚开始没思路，面试官给提示：00 变到 10 是没代价的，而 10 变 01 是要看时机的，出现 010 这种情况时可以让 10 变 01；刚开始写的代码如下：</p><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><span class="line"> <span class="number">1</span> <span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"> <span class="number">2</span> <span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string&gt;</span></span></span><br><span class="line"> <span class="number">3</span> <span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"> <span class="number">4</span></span><br><span class="line"> <span class="number">5</span> <span class="function"><span class="built_in">string</span> <span class="title">func</span><span class="params">(<span class="keyword">const</span> <span class="built_in">string</span>&amp; s)</span> </span>&#123;</span><br><span class="line"> <span class="number">6</span>     <span class="built_in">string</span> ret;</span><br><span class="line"> <span class="number">7</span>     <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>;i &lt; s.size(); ++i) &#123;</span><br><span class="line"> <span class="number">8</span>         <span class="keyword">char</span> c = s[i];</span><br><span class="line"> <span class="number">9</span>         <span class="keyword">if</span> (c == <span class="string">&#x27;1&#x27;</span>) &#123;</span><br><span class="line"><span class="number">10</span>             ret.push_back(c);</span><br><span class="line"><span class="number">11</span>             <span class="keyword">continue</span>;</span><br><span class="line"><span class="number">12</span>         &#125; <span class="keyword">else</span> &#123;</span><br><span class="line"><span class="number">13</span>             <span class="keyword">if</span> (i + <span class="number">1</span> &lt; s.size()) &#123;</span><br><span class="line"><span class="number">14</span>                 <span class="keyword">if</span> (s[i+<span class="number">1</span>] == <span class="string">&#x27;0&#x27;</span>)</span><br><span class="line"><span class="number">15</span>                     ret.push_back(<span class="string">&#x27;1&#x27;</span>);</span><br><span class="line"><span class="number">16</span>                 <span class="keyword">else</span> &#123;</span><br><span class="line"><span class="number">17</span>                     <span class="keyword">if</span> (i + <span class="number">2</span> &lt; s.size() &amp;&amp; s[i+<span class="number">2</span>] == <span class="string">&#x27;0&#x27;</span>) &#123;</span><br><span class="line"><span class="number">18</span>                         ret.append(<span class="string">&quot;101&quot;</span>);</span><br><span class="line"><span class="number">19</span>                         i += <span class="number">2</span>;</span><br><span class="line"><span class="number">20</span>                     &#125;</span><br><span class="line"><span class="number">21</span>                 &#125;</span><br><span class="line"><span class="number">22</span>             &#125;</span><br><span class="line"><span class="number">23</span>         &#125;</span><br><span class="line"><span class="number">24</span>     &#125;</span><br><span class="line"><span class="number">25</span>     <span class="keyword">return</span> ret;</span><br><span class="line"><span class="number">26</span> &#125;</span><br><span class="line"><span class="number">27</span></span><br><span class="line"><span class="number">28</span> <span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line"><span class="number">29</span>     <span class="built_in">string</span> s = <span class="string">&quot;0000&quot;</span>;</span><br><span class="line"><span class="number">30</span>     <span class="built_in">string</span> ret = func(s);</span><br><span class="line"><span class="number">31</span>     <span class="built_in">cout</span> &lt;&lt; ret &lt;&lt; <span class="string">&quot;\n&quot;</span>;</span><br><span class="line"><span class="number">32</span>     <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line"><span class="number">33</span> &#125;</span><br></pre></td></tr></table></figure><p>然后面试官提示 18 行和 13 行出错。然后我还想了一会，哎，无语~~~~</p><p>如果是 010 的情况下不是无脑把 101 压入 ret，而应该把 1 压入，然后后续再如循环进行处理。 i + 1 &lt; s.size() 不满足时如果直接返回，会导致 0000 这样的测试过不了，即最后一个字符得不到处理。</p><p>改正后的代码：</p><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><span class="line"><span class="number">1</span> <span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"> <span class="number">2</span> <span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string&gt;</span></span></span><br><span class="line"> <span class="number">3</span> <span class="keyword">using</span> <span class="keyword">namespace</span> <span class="built_in">std</span>;</span><br><span class="line"> <span class="number">4</span></span><br><span class="line"> <span class="number">5</span> <span class="function"><span class="built_in">string</span> <span class="title">func</span><span class="params">(<span class="keyword">const</span> <span class="built_in">string</span>&amp; tmp)</span> </span>&#123;</span><br><span class="line"> <span class="number">6</span>     <span class="built_in">string</span> s = tmp;</span><br><span class="line"> <span class="number">7</span>     <span class="built_in">string</span> ret;</span><br><span class="line"> <span class="number">8</span>     <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>;i &lt; s.size(); ++i) &#123;</span><br><span class="line"> <span class="number">9</span>         <span class="keyword">char</span> c = s[i];</span><br><span class="line"><span class="number">10</span>         <span class="keyword">if</span> (c == <span class="string">&#x27;1&#x27;</span>) &#123; <span class="comment">// 1</span></span><br><span class="line"><span class="number">11</span>             ret.push_back(c);</span><br><span class="line"><span class="number">12</span>             <span class="keyword">continue</span>;</span><br><span class="line"><span class="number">13</span>         &#125; <span class="keyword">else</span> &#123;</span><br><span class="line"><span class="number">14</span>             <span class="keyword">if</span> (i + <span class="number">1</span> &lt; s.size()) &#123;</span><br><span class="line"><span class="number">15</span>                 <span class="keyword">if</span> (s[i+<span class="number">1</span>] == <span class="string">&#x27;0&#x27;</span>) <span class="comment">// 00</span></span><br><span class="line"><span class="number">16</span>                     ret.push_back(<span class="string">&#x27;1&#x27;</span>);</span><br><span class="line"><span class="number">17</span>                 <span class="keyword">else</span> &#123; <span class="comment">// 01</span></span><br><span class="line"><span class="number">18</span>                     <span class="keyword">if</span> (i + <span class="number">2</span> &lt; s.size()) &#123;</span><br><span class="line"><span class="number">19</span>                         <span class="keyword">if</span> (s[i + <span class="number">2</span>] == <span class="string">&#x27;0&#x27;</span>) &#123; <span class="comment">// 010</span></span><br><span class="line"><span class="number">20</span>                             ret.push_back(<span class="string">&#x27;1&#x27;</span>);</span><br><span class="line"><span class="number">21</span>                             s[i + <span class="number">1</span>] = <span class="string">&#x27;0&#x27;</span>;</span><br><span class="line"><span class="number">22</span>                             s[i + <span class="number">2</span>] = <span class="string">&#x27;1&#x27;</span>;</span><br><span class="line"><span class="number">23</span>                         &#125; <span class="keyword">else</span> &#123;</span><br><span class="line"><span class="number">24</span>                             <span class="comment">// 011</span></span><br><span class="line"><span class="number">25</span>                             ret.push_back(<span class="string">&#x27;0&#x27;</span>);</span><br><span class="line"><span class="number">26</span>                         &#125;</span><br><span class="line"><span class="number">27</span>                     &#125; <span class="keyword">else</span> ret.push_back(<span class="string">&#x27;0&#x27;</span>);</span><br><span class="line"><span class="number">28</span>                 &#125;</span><br><span class="line"><span class="number">29</span>             &#125; <span class="keyword">else</span> ret.push_back(<span class="string">&#x27;0&#x27;</span>);</span><br><span class="line"><span class="number">30</span>         &#125;</span><br><span class="line"><span class="number">31</span>     &#125;</span><br><span class="line"><span class="number">32</span>     <span class="keyword">return</span> ret;</span><br><span class="line"><span class="number">33</span> &#125;</span><br><span class="line"><span class="number">34</span></span><br><span class="line"><span class="number">35</span> <span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line"><span class="number">36</span>     <span class="built_in">string</span> s = <span class="string">&quot;0000&quot;</span>;</span><br><span class="line"><span class="number">37</span>     <span class="built_in">string</span> ret = func(s);</span><br><span class="line"><span class="number">38</span>     <span class="built_in">cout</span> &lt;&lt; ret &lt;&lt; <span class="string">&quot;\n&quot;</span>;</span><br><span class="line"><span class="number">39</span>     <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line"><span class="number">40</span> &#125;</span><br></pre></td></tr></table></figure>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h1 id=&quot;手撕算法记录&quot;&gt;&lt;a href=&quot;#手撕算法记录&quot; class=&quot;headerlink&quot; title=&quot;手撕算法记录&quot;&gt;&lt;/a&gt;手撕算法记录&lt;/h1&gt;&lt;h3 id=&quot;4-月-8-日-华为云&quot;&gt;&lt;a href=&quot;#4-月-8-日-华为云&quot; class=&quot;header</summary>
+      
+    
+    
+    
+    
+  </entry>
   
   <entry>
     <title>cs144 lab3 the TCP sender</title>
@@ -277,6 +297,26 @@
   </entry>
   
   <entry>
+    <title>hexo 博客移植到别的服务器上</title>
+    <link href="https://codroc.github.io/2021/11/08/hexo%E5%8D%9A%E5%AE%A2%E7%A7%BB%E6%A4%8D%E5%88%B0%E5%88%AB%E7%9A%84%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A/"/>
+    <id>https://codroc.github.io/2021/11/08/hexo%E5%8D%9A%E5%AE%A2%E7%A7%BB%E6%A4%8D%E5%88%B0%E5%88%AB%E7%9A%84%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A/</id>
+    <published>2021-11-07T16:00:00.000Z</published>
+    <updated>2021-11-09T01:44:22.199Z</updated>
+    
+    <content type="html"><![CDATA[<h3 id="hexo-博客移植到别的服务器上"><a href="#hexo-博客移植到别的服务器上" class="headerlink" title="hexo 博客移植到别的服务器上"></a>hexo 博客移植到别的服务器上</h3><p><strong>1. 将你原来电脑上已经配置好并生成的 hexo 目录拷到你的新电脑上</strong></p><p><strong>2. 在你的新电脑上首先配置 hexo 环境：安装 Node.js</strong></p><p><strong>3. 安装 hexo，执行命令：</strong></p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install -g hexo</span><br></pre></td></tr></table></figure><p><strong>4. 安装好之后，进入之前拷贝来的 <code>hexo/source_code/blog</code> 目录</strong></p><p><strong>5. 模块安装，执行命令：</strong></p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">npm install</span><br><span class="line">npm install hexo-deployer-git --save</span><br><span class="line">npm install hexo-generator-feed --save</span><br><span class="line">npm install hexo-generator-sitemap --save</span><br></pre></td></tr></table></figure><p><strong>6. 部署，执行命令：</strong></p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo g</span><br><span class="line">hexo deploy</span><br></pre></td></tr></table></figure>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h3 id=&quot;hexo-博客移植到别的服务器上&quot;&gt;&lt;a href=&quot;#hexo-博客移植到别的服务器上&quot; class=&quot;headerlink&quot; title=&quot;hexo 博客移植到别的服务器上&quot;&gt;&lt;/a&gt;hexo 博客移植到别的服务器上&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;1. 将你原</summary>
+      
+    
+    
+    
+    
+  </entry>
+  
+  <entry>
     <title>为什么采用线程池方案？</title>
     <link href="https://codroc.github.io/2021/11/08/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%87%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%96%B9%E6%A1%88%EF%BC%9F/"/>
     <id>https://codroc.github.io/2021/11/08/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%87%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%96%B9%E6%A1%88%EF%BC%9F/</id>
@@ -290,26 +330,6 @@
       
     <summary type="html">&lt;h5 id=&quot;为什么采用线程池方案？&quot;&gt;&lt;a href=&quot;#为什么采用线程池方案？&quot; class=&quot;headerlink&quot; title=&quot;为什么采用线程池方案？&quot;&gt;&lt;/a&gt;为什么采用线程池方案？&lt;/h5&gt;&lt;ol&gt;
 &lt;li&gt;采用线程池方案其实就是采用 &lt;strong&gt;单进程多线程</summary>
-      
-    
-    
-    
-    
-  </entry>
-  
-  <entry>
-    <title>hexo 博客移植到别的服务器上</title>
-    <link href="https://codroc.github.io/2021/11/08/hexo%E5%8D%9A%E5%AE%A2%E7%A7%BB%E6%A4%8D%E5%88%B0%E5%88%AB%E7%9A%84%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A/"/>
-    <id>https://codroc.github.io/2021/11/08/hexo%E5%8D%9A%E5%AE%A2%E7%A7%BB%E6%A4%8D%E5%88%B0%E5%88%AB%E7%9A%84%E6%9C%8D%E5%8A%A1%E5%99%A8%E4%B8%8A/</id>
-    <published>2021-11-07T16:00:00.000Z</published>
-    <updated>2021-11-09T01:44:22.199Z</updated>
-    
-    <content type="html"><![CDATA[<h3 id="hexo-博客移植到别的服务器上"><a href="#hexo-博客移植到别的服务器上" class="headerlink" title="hexo 博客移植到别的服务器上"></a>hexo 博客移植到别的服务器上</h3><p><strong>1. 将你原来电脑上已经配置好并生成的 hexo 目录拷到你的新电脑上</strong></p><p><strong>2. 在你的新电脑上首先配置 hexo 环境：安装 Node.js</strong></p><p><strong>3. 安装 hexo，执行命令：</strong></p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">npm install -g hexo</span><br></pre></td></tr></table></figure><p><strong>4. 安装好之后，进入之前拷贝来的 <code>hexo/source_code/blog</code> 目录</strong></p><p><strong>5. 模块安装，执行命令：</strong></p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">npm install</span><br><span class="line">npm install hexo-deployer-git --save</span><br><span class="line">npm install hexo-generator-feed --save</span><br><span class="line">npm install hexo-generator-sitemap --save</span><br></pre></td></tr></table></figure><p><strong>6. 部署，执行命令：</strong></p><figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">hexo g</span><br><span class="line">hexo deploy</span><br></pre></td></tr></table></figure>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;h3 id=&quot;hexo-博客移植到别的服务器上&quot;&gt;&lt;a href=&quot;#hexo-博客移植到别的服务器上&quot; class=&quot;headerlink&quot; title=&quot;hexo 博客移植到别的服务器上&quot;&gt;&lt;/a&gt;hexo 博客移植到别的服务器上&lt;/h3&gt;&lt;p&gt;&lt;strong&gt;1. 将你原</summary>
       
     
     
@@ -390,26 +410,6 @@
       
       
     <summary type="html">&lt;h3 id=&quot;copy-on-write&quot;&gt;&lt;a href=&quot;#copy-on-write&quot; class=&quot;headerlink&quot; title=&quot;copy-on-write&quot;&gt;&lt;/a&gt;copy-on-write&lt;/h3&gt;&lt;p&gt;​        COW 在我看 &lt;strong&gt;深</summary>
-      
-    
-    
-    
-    
-  </entry>
-  
-  <entry>
-    <title>MIT 6.s081 2020 Lab5 Lazy allocation</title>
-    <link href="https://codroc.github.io/2021/10/19/lab5lazyAllocation/"/>
-    <id>https://codroc.github.io/2021/10/19/lab5lazyAllocation/</id>
-    <published>2021-10-18T16:00:00.000Z</published>
-    <updated>2021-11-09T03:50:40.115Z</updated>
-    
-    <content type="html"><![CDATA[<h3 id="Lazy-Allocation"><a href="#Lazy-Allocation" class="headerlink" title="Lazy Allocation"></a>Lazy Allocation</h3><p>这一章讲的是<strong>懒分配</strong>。什么是懒分配呢？就是在用户通过 sbrk 向 OS 申请内存的时候，操作系统仅仅增加 p-&gt;sz （即虚拟内存大小）而不实际分配物理内存，直到用户访问那块未分配的物理内存导致<strong>页错误</strong>时，由异常处理程序来做实际的分配与映射，相当于<strong>把分配物理内存这件事推迟了！</strong></p><p>Lazy allocation 的好处：程序员过量申请内存，而实际使用的内存却很少的情况是十分常见的，使用懒分配就能很好的减少因这种情况导致的物理内存的浪费。</p><p>Lazy allocation 依赖于：缺页异常机制。这个异常是由硬件发现的！当 CPU 将虚拟地址 va 传递给 MMU 进行地址转换的时候，MMU 就会发现 va 对于的 PTE 的有效位为 0，则触发一个缺页异常。</p><p><strong>实现思路：</strong></p><ol><li>修改 sys_sbrk 系统调用函数，每次用户申请内存时就仅仅增加虚拟内存大小（即 p-&gt;sz）而不做实际物理内存分配。在用户释放内存的时候，去做释放物理内存以及解除映射的逻辑。</li><li>在 usertrap 中添加缺页异常处理逻辑。</li><li>在 fork 中会调用 uvmcopy 时，父进程的有些内存可能还没有做映射呢，所以也要对 uvmcopy 就行修改。</li><li>在进行 uvmunmap 的时候遇到无效页则跳过。</li></ol><p>这一章还是很简单的，没什么需要重点记录的。。。</p>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;h3 id=&quot;Lazy-Allocation&quot;&gt;&lt;a href=&quot;#Lazy-Allocation&quot; class=&quot;headerlink&quot; title=&quot;Lazy Allocation&quot;&gt;&lt;/a&gt;Lazy Allocation&lt;/h3&gt;&lt;p&gt;这一章讲的是&lt;strong&gt;懒分配&lt;</summary>
       
     
     
