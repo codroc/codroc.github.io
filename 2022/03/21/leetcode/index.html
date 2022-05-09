@@ -78,4 +78,184 @@
 <p>但是这里的索引以及边界问题的使用很让人不解。。。。</p>
 <figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">longestOnes</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums, <span class="keyword">int</span> k)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> n = nums.size();</span><br><span class="line">        <span class="function"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; <span class="title">v</span><span class="params">(n + <span class="number">1</span>)</span></span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>; i &lt; n + <span class="number">1</span>; ++i) &#123;</span><br><span class="line">            v[i] = v[i - <span class="number">1</span>] + <span class="number">1</span> - nums[i - <span class="number">1</span>];</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">int</span> ret = <span class="number">0</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>; i &lt; n; ++i) &#123; <span class="comment">// 这里为什么要从 0 开始遍历</span></span><br><span class="line">            <span class="keyword">int</span> left = lower_bound(v.begin(), v.end(), v[i + <span class="number">1</span>] - k) - v.begin();</span><br><span class="line">            ret = max(ret, i - left + <span class="number">1</span>); <span class="comment">// 为什么是 i - left + 1 而不是 i - left</span></span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> ret;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
 
+<p><strong><a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/longest-palindromic-substring/">5. 最长回文子串</a></strong></p>
+<p>给你一个字符串 <code>s</code>，找到 <code>s</code> 中最长的回文子串。</p>
+<p><strong>示例 1：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">输入：s &#x3D; &quot;babad&quot;</span><br><span class="line">输出：&quot;bab&quot;</span><br><span class="line">解释：&quot;aba&quot; 同样是符合题意的答案。</span><br></pre></td></tr></table></figure>
+
+<p><strong>示例 2：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">输入：s &#x3D; &quot;cbbd&quot;</span><br><span class="line">输出：&quot;bb&quot;</span><br></pre></td></tr></table></figure>
+
+<p><strong>提示：</strong></p>
+<ul>
+<li><code>1 &lt;= s.length &lt;= 1000</code></li>
+<li><code>s</code> 仅由数字和英文字母组成</li>
+</ul>
+<p><strong>方法：中间扩散法！</strong></p>
+<p>首先确定回文串，就是找中心然后想两边扩散看是不是对称的就可以了。</p>
+<p><strong>在遍历中心点的时候，要注意中心点有两种情况</strong>。</p>
+<p>一个元素可以作为中心点，两个元素也可以作为中心点。</p>
+<p>所以我们在计算的时候，要注意一个元素为中心点和两个元素为中心点的情况。</p>
+<p><strong>这两种情况可以放在一起计算，但分别计算思路更清晰，我倾向于分别计算</strong>，代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="built_in">string</span> <span class="title">longestPalindrome</span><span class="params">(<span class="built_in">string</span> s)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> l, r;</span><br><span class="line">        <span class="keyword">int</span> n = s.size();</span><br><span class="line">        <span class="built_in">string</span> ret;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>;i &lt; n; ++i) &#123;</span><br><span class="line">            l = r = i;</span><br><span class="line">            <span class="keyword">while</span> (l &gt;=<span class="number">0</span> &amp;&amp; r &lt; n) &#123;</span><br><span class="line">                <span class="keyword">if</span> (s[l] != s[r]) <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">if</span> (r - l + <span class="number">1</span> &gt; ret.size())</span><br><span class="line">                    ret = s.substr(l, r - l + <span class="number">1</span>);</span><br><span class="line">                --l;</span><br><span class="line">                ++r;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">0</span>;i &lt; n; ++i) &#123;</span><br><span class="line">            l = r = i; r++;</span><br><span class="line">            <span class="keyword">while</span> (l &gt;=<span class="number">0</span> &amp;&amp; r &lt; n) &#123;</span><br><span class="line">                <span class="keyword">if</span> (s[l] != s[r]) <span class="keyword">break</span>;</span><br><span class="line">                <span class="keyword">if</span> (r - l + <span class="number">1</span> &gt; ret.size())</span><br><span class="line">                    ret = s.substr(l, r - l + <span class="number">1</span>);</span><br><span class="line">                --l;</span><br><span class="line">                ++r;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> ret;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong><a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/kth-largest-element-in-an-array/">215. 数组中的第K个最大元素</a></strong></p>
+<p>给定整数数组 <code>nums</code> 和整数 <code>k</code>，请返回数组中第 <code>**k**</code> 个最大的元素。</p>
+<p>请注意，你需要找的是数组排序后的第 <code>k</code> 个最大的元素，而不是第 <code>k</code> 个不同的元素。</p>
+<p><strong>示例 1:</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">输入: [3,2,1,5,6,4] 和 k &#x3D; 2</span><br><span class="line">输出: 5</span><br></pre></td></tr></table></figure>
+
+<p><strong>示例 2:</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">输入: [3,2,3,1,2,4,5,5,6] 和 k &#x3D; 4</span><br><span class="line">输出: 4</span><br></pre></td></tr></table></figure>
+
+<p><strong>提示：</strong></p>
+<ul>
+<li><code>1 &lt;= k &lt;= nums.length &lt;= 104</code></li>
+<li><code>-104 &lt;= nums[i] &lt;= 104</code></li>
+</ul>
+<p>这一题实际上就是考察<strong>快排</strong>会不会，以及对快排进行优化，即随机取一个数作为<strong>比较数</strong>，而不是呆呆得永远取第一个数，</p>
+<p>代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">findK</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums, <span class="keyword">int</span> l, <span class="keyword">int</span> r, <span class="keyword">int</span> k)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> t_l = l, t_r = r;</span><br><span class="line">        <span class="keyword">if</span> (r &gt; l) &#123; <span class="comment">// 引入随机性，防止退化到 O(n*n)</span></span><br><span class="line">            <span class="keyword">int</span> idx = rand()%(r - l) + l; <span class="comment">// 注意 r - l = 0 时会发生计算错误</span></span><br><span class="line">            swap(nums[l], nums[idx]);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">int</span> cmp_num = nums[l];</span><br><span class="line">        <span class="keyword">while</span> (l &lt; r) &#123;</span><br><span class="line">            <span class="keyword">while</span> (r &gt; l &amp;&amp; nums[r] &lt;= cmp_num) --r;</span><br><span class="line">            swap(nums[l], nums[r]);</span><br><span class="line">            <span class="keyword">while</span> (l &lt; r &amp;&amp; nums[l] &gt;= cmp_num) ++l;</span><br><span class="line">            swap(nums[l], nums[r]);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (l + <span class="number">1</span> == k) <span class="keyword">return</span> nums[l];</span><br><span class="line">        <span class="keyword">return</span> l + <span class="number">1</span> &lt; k ? findK(nums, l + <span class="number">1</span>, t_r, k) :</span><br><span class="line">            findK(nums, t_l, r - <span class="number">1</span>, k);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">findKthLargest</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums, <span class="keyword">int</span> k)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// 用快排的思想</span></span><br><span class="line">        <span class="keyword">return</span> findK(nums, <span class="number">0</span>, nums.size() - <span class="number">1</span>, k);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong><a target="_blank" rel="noopener" href="https://leetcode-cn.com/problems/find-median-from-data-stream/">295. 数据流的中位数</a></strong></p>
+<p>中位数是有序列表中间的数。如果列表长度是偶数，中位数则是中间两个数的平均值。</p>
+<p>例如，</p>
+<p>[2,3,4] 的中位数是 3</p>
+<p>[2,3] 的中位数是 (2 + 3) / 2 = 2.5</p>
+<p>设计一个支持以下两种操作的数据结构：</p>
+<ul>
+<li>void addNum(int num) - 从数据流中添加一个整数到数据结构中。</li>
+<li>double findMedian() - 返回目前所有元素的中位数。</li>
+</ul>
+<p><strong>示例：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">addNum(1)</span><br><span class="line">addNum(2)</span><br><span class="line">findMedian() -&gt; 1.5</span><br><span class="line">addNum(3)</span><br><span class="line">findMedian() -&gt; 2</span><br></pre></td></tr></table></figure>
+
+<p>进阶:</p>
+<ol>
+<li>如果数据流中所有整数都在 0 到 100 范围内，你将如何优化你的算法？</li>
+<li>如果数据流中 99% 的整数都在 0 到 100 范围内，你将如何优化你的算法？</li>
+</ol>
+<h4 id="方法："><a href="#方法：" class="headerlink" title="方法："></a>方法：</h4><p>中位数，只要记住用</p>
+<ol>
+<li><strong>大顶堆 + 小顶堆</strong></li>
+<li><strong>大顶堆 &lt; 小顶堆</strong></li>
+</ol>
+<p>因此就相当于把整个有序列表划分成两部分，前面的部分在大顶堆，后面部分在小顶堆，只要保持 <strong>|大顶堆.size() - 小顶堆.size()| &lt;= 1</strong></p>
+<p>就可以轻松获得中位数了！代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">MedianFinder</span> &#123;</span></span><br><span class="line"><span class="keyword">private</span>:</span><br><span class="line">    <span class="built_in">priority_queue</span>&lt;<span class="keyword">int</span>, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;, greater&lt;<span class="keyword">int</span>&gt;&gt; min_pq;</span><br><span class="line">    <span class="built_in">priority_queue</span>&lt;<span class="keyword">int</span>, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;, less&lt;<span class="keyword">int</span>&gt;&gt; max_pq;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    MedianFinder()</span><br><span class="line">        : min_pq()</span><br><span class="line">        , max_pq()</span><br><span class="line">    &#123;&#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">void</span> <span class="title">addNum</span><span class="params">(<span class="keyword">int</span> num)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">if</span> (min_pq.empty() || min_pq.top() &lt;= num) &#123;</span><br><span class="line">            min_pq.push(num);</span><br><span class="line">        &#125; <span class="keyword">else</span> max_pq.push(num);</span><br><span class="line"></span><br><span class="line">        <span class="keyword">if</span> (min_pq.size() &gt; max_pq.size() + <span class="number">1</span>) &#123;</span><br><span class="line">            max_pq.push(min_pq.top());</span><br><span class="line">            min_pq.pop();</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span>(<span class="number">1</span> + min_pq.size() &lt; max_pq.size()) &#123;</span><br><span class="line">            min_pq.push(max_pq.top());</span><br><span class="line">            max_pq.pop();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="function"><span class="keyword">double</span> <span class="title">findMedian</span><span class="params">()</span> </span>&#123;</span><br><span class="line">        <span class="keyword">double</span> ret;</span><br><span class="line">        <span class="keyword">if</span> (min_pq.size() == max_pq.size()) &#123;</span><br><span class="line">            ret = (min_pq.top() + max_pq.top()) * <span class="number">1.0</span> /<span class="number">2</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> <span class="keyword">if</span>(min_pq.size() &gt; max_pq.size()) &#123;</span><br><span class="line">            ret = min_pq.top() * <span class="number">1.0</span>;</span><br><span class="line">        &#125; <span class="keyword">else</span> ret = max_pq.top() * <span class="number">1.0</span>;</span><br><span class="line">        <span class="keyword">return</span> ret;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+
+
+<h2 id="动态规划之子序列问题"><a href="#动态规划之子序列问题" class="headerlink" title="动态规划之子序列问题"></a>动态规划之子序列问题</h2><ol>
+<li><a target="_blank" rel="noopener" href="https://leetcode.cn/problems/longest-increasing-subsequence/">300.最长递增子序列</a></li>
+<li><a target="_blank" rel="noopener" href="https://leetcode.cn/problems/longest-continuous-increasing-subsequence/">674.最长连续递增序列</a></li>
+<li><a target="_blank" rel="noopener" href="https://leetcode.cn/problems/maximum-length-of-repeated-subarray/">718.最长重复子数组</a></li>
+<li><a target="_blank" rel="noopener" href="https://leetcode.cn/problems/longest-common-subsequence/">1143.最长公共子序列</a></li>
+<li><a href="https://leetcode-cn.com/link/?target=https://programmercarl.com/1035.%E4%B8%8D%E7%9B%B8%E4%BA%A4%E7%9A%84%E7%BA%BF.html">1035.不相交的线</a></li>
+<li><a href="https://leetcode-cn.com/link/?target=https://programmercarl.com/0053.%E6%9C%80%E5%A4%A7%E5%AD%90%E5%BA%8F%E5%92%8C%EF%BC%88%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92%EF%BC%89.html">53.最大子序和</a></li>
+<li><a href="https://leetcode-cn.com/link/?target=https://programmercarl.com/0392.%E5%88%A4%E6%96%AD%E5%AD%90%E5%BA%8F%E5%88%97.html">392.判断子序列</a></li>
+<li><a href="https://leetcode-cn.com/link/?target=https://programmercarl.com/0115.%E4%B8%8D%E5%90%8C%E7%9A%84%E5%AD%90%E5%BA%8F%E5%88%97.html">115.不同的子序列</a></li>
+<li><a href="https://leetcode-cn.com/link/?target=https://programmercarl.com/0583.%E4%B8%A4%E4%B8%AA%E5%AD%97%E7%AC%A6%E4%B8%B2%E7%9A%84%E5%88%A0%E9%99%A4%E6%93%8D%E4%BD%9C.html">583.两个字符串的删除操作</a></li>
+<li><a href="https://leetcode-cn.com/link/?target=https://programmercarl.com/0072.%E7%BC%96%E8%BE%91%E8%B7%9D%E7%A6%BB.html">72.编辑距离</a></li>
+<li><a href="https://leetcode-cn.com/link/?target=https://programmercarl.com/%E4%B8%BA%E4%BA%86%E7%BB%9D%E6%9D%80%E7%BC%96%E8%BE%91%E8%B7%9D%E7%A6%BB%EF%BC%8C%E5%8D%A1%E5%B0%94%E5%81%9A%E4%BA%86%E4%B8%89%E6%AD%A5%E9%93%BA%E5%9E%AB.html">为了绝杀编辑距离，我做了三步铺垫，你都知道么？</a></li>
+<li><a href="https://leetcode-cn.com/link/?target=https://programmercarl.com/0647.%E5%9B%9E%E6%96%87%E5%AD%90%E4%B8%B2.html">647.回文子串</a></li>
+<li><a href="https://leetcode-cn.com/link/?target=https://programmercarl.com/0516.%E6%9C%80%E9%95%BF%E5%9B%9E%E6%96%87%E5%AD%90%E5%BA%8F%E5%88%97.html">516.最长回文子序列</a></li>
+<li><a href="https://leetcode-cn.com/link/?target=https://programmercarl.com/%E5%8A%A8%E6%80%81%E8%A7%84%E5%88%92%E6%80%BB%E7%BB%93%E7%AF%87.html">动态规划总结篇</a></li>
+</ol>
+<hr>
+<p><strong><a target="_blank" rel="noopener" href="https://leetcode.cn/problems/longest-increasing-subsequence/">300.最长递增子序列</a></strong></p>
+<p>给你一个整数数组 <code>nums</code> ，找到其中最长<strong>严格递增子序列</strong>的<strong>长度</strong>。</p>
+<p>子序列 是由数组派生而来的序列，删除（或不删除）数组中的元素而不改变其余元素的顺序。例如，[3,6,2,7] 是数组 [0,3,1,6,2,2,7] 的子序列。</p>
+<p><strong>示例 1：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">输入：nums &#x3D; [10,9,2,5,3,7,101,18]</span><br><span class="line">输出：4</span><br><span class="line">解释：最长递增子序列是 [2,3,7,101]，因此长度为 4 。</span><br></pre></td></tr></table></figure>
+
+<p><strong>示例 2：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">输入：nums &#x3D; [0,1,0,3,2,3]</span><br><span class="line">输出：4</span><br></pre></td></tr></table></figure>
+
+<p><strong>示例 3：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">输入：nums &#x3D; [7,7,7,7,7,7,7]</span><br><span class="line">输出：1</span><br></pre></td></tr></table></figure>
+
+<p><strong>提示：</strong></p>
+<ul>
+<li><code>1 &lt;= nums.length &lt;= 2500</code></li>
+<li><code>-104 &lt;= nums[i] &lt;= 104</code></li>
+</ul>
+<p>注意项：</p>
+<ul>
+<li><p>注意这里说的是子序列而不是子串</p>
+</li>
+<li><p>只需要返回长度，不需要具体的子序列</p>
+</li>
+<li><p>严格递增</p>
+</li>
+</ul>
+<p>用 dp[n] 表示 n 个元素的数组中，以 nums[n - 1] <strong>元素结尾</strong>的最长<strong>严格递增子序列</strong>的<strong>长度</strong> 为 dp[n]，那么</p>
+<p>dp[n + 1] = max(dp[i] + 1)，其中必须满足 nums[i] &lt; nums[n + 1]，i = 0~n</p>
+<p>代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">lengthOfLIS</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums)</span> </span>&#123;</span><br><span class="line">        <span class="function"><span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt; <span class="title">dp</span><span class="params">(nums.size(), <span class="number">1</span>)</span></span>;</span><br><span class="line">        <span class="keyword">int</span> ret = <span class="number">1</span>;</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>;i &lt; nums.size(); ++i) &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">0</span>;j &lt; i;++j) &#123;</span><br><span class="line">                <span class="keyword">if</span> (nums[j] &lt; nums[i])</span><br><span class="line">                    dp[i] = max(dp[i], dp[j] + <span class="number">1</span>);</span><br><span class="line">            &#125;</span><br><span class="line">            ret = max(ret, dp[i]);</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> ret;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong><a target="_blank" rel="noopener" href="https://leetcode.cn/problems/maximum-length-of-repeated-subarray/">718.最长重复子数组</a></strong></p>
+<p>给两个整数数组 <code>nums1</code> 和 <code>nums2</code> ，返回 <em>两个数组中 <strong>公共的</strong> 、长度最长的子数组的长度</em> 。</p>
+<p><strong>示例 1：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">输入：nums1 &#x3D; [1,2,3,2,1], nums2 &#x3D; [3,2,1,4,7]</span><br><span class="line">输出：3</span><br><span class="line">解释：长度最长的公共子数组是 [3,2,1] 。</span><br></pre></td></tr></table></figure>
+
+<p><strong>示例 2：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">输入：nums1 &#x3D; [0,0,0,0,0], nums2 &#x3D; [0,0,0,0,0]</span><br><span class="line">输出：5</span><br></pre></td></tr></table></figure>
+
+<p><strong>提示：</strong></p>
+<ul>
+<li><code>1 &lt;= nums1.length, nums2.length &lt;= 1000</code></li>
+<li><code>0 &lt;= nums1[i], nums2[i] &lt;= 100</code></li>
+</ul>
+<p>这一题明显和前面的那种有较大的差别了，因为它涉及两个数组，而前面的都是在一个数组里面折腾的。</p>
+<p>这种两个数组的优先考虑二维 DP。再结合 一维时候的思想：dp[i] 表示 第 i 个元素结尾的最长xxx子串。</p>
+<p>最后可以想到：用 dp[i][j] 表示以 nums1[i] 和 nums2[j] 结尾的最长公共子串的长度，那么</p>
+<ul>
+<li>如果 nums1[i] == nums2[j]，dp[i][j] =  dp[i - 1][j - 1] + 1</li>
+<li>如果 nums1[i] != nums2[j]，dp[i][j] =  0</li>
+</ul>
+<p>只要找到最大的那个 dp[i][j] 就可以了</p>
+<p>这里还需要一个小技巧，由于依赖于 i - 1 和 j - 1 因此，遍历的 i，j 要从 1 开始。那么我们就多加一行一列，下标 1 实际上对应于数组中的下标 0，代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">findLength</span><span class="params">(<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums1, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&amp; nums2)</span> </span>&#123;</span><br><span class="line">        <span class="keyword">int</span> n1 = nums1.size();</span><br><span class="line">        <span class="keyword">int</span> n2 = nums2.size();</span><br><span class="line">        <span class="keyword">int</span> ret;</span><br><span class="line">        <span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&gt; dp(n1 + <span class="number">1</span>, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;(n2 + <span class="number">1</span>, <span class="number">0</span>));</span><br><span class="line">        ret = dp[<span class="number">0</span>][<span class="number">0</span>];</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>;i &lt; n1 + <span class="number">1</span>;++i) &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>;j &lt; n2 + <span class="number">1</span>;++j) &#123;</span><br><span class="line">                <span class="keyword">if</span> (nums1[i - <span class="number">1</span>] == nums2[j - <span class="number">1</span>]) &#123;</span><br><span class="line">                    dp[i][j] = dp[i - <span class="number">1</span>][j - <span class="number">1</span>] + <span class="number">1</span>;</span><br><span class="line">                    ret = max(ret, dp[i][j]);</span><br><span class="line">                &#125; <span class="keyword">else</span> dp[i][j] = <span class="number">0</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> ret;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+
+
+<p><strong><a target="_blank" rel="noopener" href="https://leetcode.cn/problems/longest-common-subsequence/">1143.最长公共子序列</a></strong></p>
+<p>给定两个字符串 text1 和 text2，返回这两个字符串的最长 公共子序列 的长度。如果不存在 公共子序列 ，返回 0 。</p>
+<p>一个字符串的 子序列 是指这样一个新的字符串：它是由原字符串在不改变字符的相对顺序的情况下删除某些字符（也可以不删除任何字符）后组成的新字符串。</p>
+<p>例如，”ace” 是 “abcde” 的子序列，但 “aec” 不是 “abcde” 的子序列。<br>两个字符串的 公共子序列 是这两个字符串所共同拥有的子序列。</p>
+<p> <strong>示例 1：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">输入：text1 &#x3D; &quot;abcde&quot;, text2 &#x3D; &quot;ace&quot;</span><br><span class="line">输出：3</span><br><span class="line">解释：最长公共子序列是 &quot;ace&quot; ，它的长度为 3 。</span><br></pre></td></tr></table></figure>
+
+<p><strong>示例 2：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">输入：text1 &#x3D; &quot;abc&quot;, text2 &#x3D; &quot;abc&quot;</span><br><span class="line">输出：3</span><br><span class="line">解释：最长公共子序列是 &quot;abc&quot; ，它的长度为 3 。</span><br></pre></td></tr></table></figure>
+
+<p><strong>示例 3：</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">输入：text1 &#x3D; &quot;abc&quot;, text2 &#x3D; &quot;def&quot;</span><br><span class="line">输出：0</span><br><span class="line">解释：两个字符串没有公共子序列，返回 0 。</span><br></pre></td></tr></table></figure>
+
+<p><strong>提示：</strong></p>
+<ul>
+<li><code>1 &lt;= text1.length, text2.length &lt;= 1000</code></li>
+<li><code>text1</code> 和 <code>text2</code> 仅由小写英文字符组成。</li>
+</ul>
+<p>这里也是出现了两个字符串，毫无疑问，继续二维 DP，与上一题不同的是，这里要求的是子序列而非子串，子序列可以是不连续的。</p>
+<p>用 dp[i][j] 表示以 text1[i]、text2[j] 结尾的字符串的最长公共子序列长度，那么会遇到两种情况：</p>
+<ol>
+<li>text1[i] == text2[j]，此时 dp[i][j] = dp[i - 1][j - 1] + 1;</li>
+<li>text1[i] != text2[j]，此时取两组字符串中公共子序列最长的值，其一为 (text1[i - 1], text2[j])，其二为 (text1[i], text2[j - 1])，因此 dp[i][j] = max(dp[i - 1][j], dp[i][j - 1]);</li>
+</ol>
+<p>代码如下：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">class</span> <span class="title">Solution</span> &#123;</span></span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">    <span class="function"><span class="keyword">int</span> <span class="title">longestCommonSubsequence</span><span class="params">(<span class="built_in">string</span> text1, <span class="built_in">string</span> text2)</span> </span>&#123;</span><br><span class="line">        <span class="comment">// dp[i][j] 表示字符串 text1[i]、text2[j] 的最长公共子序列长度</span></span><br><span class="line">        <span class="comment">// 如果 text1[i] == text2[j], dp[i][j] = dp[i - 1][j - 1] + 1</span></span><br><span class="line">        <span class="comment">// 如果 text1[i] != text2[j], dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])</span></span><br><span class="line">        <span class="keyword">int</span> n1 = text1.size(), n2 = text2.size();</span><br><span class="line">        <span class="built_in">vector</span>&lt;<span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;&gt; dp(n1 + <span class="number">1</span>, <span class="built_in">vector</span>&lt;<span class="keyword">int</span>&gt;(n2 + <span class="number">1</span>));</span><br><span class="line">        <span class="keyword">for</span> (<span class="keyword">int</span> i = <span class="number">1</span>;i &lt; n1 + <span class="number">1</span>; ++i) &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="keyword">int</span> j = <span class="number">1</span>;j &lt; n2 + <span class="number">1</span>; ++j) &#123;</span><br><span class="line">                <span class="keyword">if</span> (text1[i - <span class="number">1</span>] == text2[j - <span class="number">1</span>]) &#123;</span><br><span class="line">                    dp[i][j] = dp[i - <span class="number">1</span>][j - <span class="number">1</span>] + <span class="number">1</span>;</span><br><span class="line">                &#125; <span class="keyword">else</span> &#123;</span><br><span class="line">                    dp[i][j] = max(dp[i - <span class="number">1</span>][j], dp[i][j - <span class="number">1</span>]);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="keyword">return</span> dp[n1][n2];</span><br><span class="line">    &#125;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<p>给出表格更好理解：</p>
+<p>   a b c d e</p>
+<p>a 1 1 1 1 1</p>
+<p>c 1 1 2 2 2</p>
+<p>e 1 1 2 2 3</p>
 </div></article></div></main><footer><div class="paginator"><a href="/2022/03/26/dynamic_link/" class="prev">上一篇</a><a href="/2022/03/10/fork_and_exit_error/" class="next">下一篇</a></div><div class="copyright"><p>© 2015 - 2022 <a href="https://codroc.github.io">Codroc</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script></body></html>
