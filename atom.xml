@@ -6,7 +6,7 @@
   <link href="https://codroc.github.io/atom.xml" rel="self"/>
   
   <link href="https://codroc.github.io/"/>
-  <updated>2022-04-22T11:57:16.000Z</updated>
+  <updated>2022-05-12T11:57:16.000Z</updated>
   <id>https://codroc.github.io/</id>
   
   <author>
@@ -15,6 +15,27 @@
   </author>
   
   <generator uri="https://hexo.io/">Hexo</generator>
+  
+  <entry>
+    <title>C++ Chrono 库使用记录</title>
+    <link href="https://codroc.github.io/2022/05/12/chrono%E5%BA%93/"/>
+    <id>https://codroc.github.io/2022/05/12/chrono%E5%BA%93/</id>
+    <published>2022-05-12T11:57:16.000Z</published>
+    <updated>2022-05-12T11:57:16.000Z</updated>
+    
+    <content type="html"><![CDATA[<h1 id="c-17-chrono-库"><a href="#c-17-chrono-库" class="headerlink" title="c++17 chrono 库"></a>c++17 chrono 库</h1><p>记录下 chrono 库中常用的方法。</p><h3 id="1-获取格式化的当前日期"><a href="#1-获取格式化的当前日期" class="headerlink" title="1. 获取格式化的当前日期"></a>1. 获取格式化的当前日期</h3><p>本质还是 C 那一套：用 <code>struct tm* ctime(struct time_t*)</code> 接口，而在 C++ 中则是使用 <code>char* ctime(const std::time_t* time);</code> 接口。</p><p>可以使用 <code>std::time_t std::chrono::system_clock::to_time_t(const time_point&amp; t)</code> 接口获取 <code>std::time_t</code>，而 <code>time_point</code> 则可以用 <code>std::chrono::system_clock::now()</code> 接口获取。</p><p>代码如下：</p><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;iostream&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;chrono&gt;</span></span></span><br><span class="line"> </span><br><span class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line"><span class="keyword">auto</span> t = <span class="built_in">std</span>::chrono::system_clock::now();</span><br><span class="line">    <span class="built_in">std</span>::<span class="keyword">time_t</span> today = <span class="built_in">std</span>::chrono::system_clock::<span class="keyword">to_time_t</span>(t);</span><br><span class="line">    <span class="built_in">cout</span> &lt;&lt; <span class="built_in">std</span>::ctime(&amp;today) &lt;&lt; <span class="built_in">endl</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>]]></content>
+    
+    
+      
+      
+    <summary type="html">&lt;h1 id=&quot;c-17-chrono-库&quot;&gt;&lt;a href=&quot;#c-17-chrono-库&quot; class=&quot;headerlink&quot; title=&quot;c++17 chrono 库&quot;&gt;&lt;/a&gt;c++17 chrono 库&lt;/h1&gt;&lt;p&gt;记录下 chrono 库中常用的方法。&lt;/p&gt;
+</summary>
+      
+    
+    
+    
+    
+  </entry>
   
   <entry>
     <title>SSL</title>
@@ -389,27 +410,6 @@
       
       
     <summary type="html">&lt;h4 id=&quot;为什么-诊断日志（diagnostic-log）需要-滚动（rolling）-？&quot;&gt;&lt;a href=&quot;#为什么-诊断日志（diagnostic-log）需要-滚动（rolling）-？&quot; class=&quot;headerlink&quot; title=&quot;为什么 诊断日志（dia</summary>
-      
-    
-    
-    
-    
-  </entry>
-  
-  <entry>
-    <title>为什么采用线程池方案？</title>
-    <link href="https://codroc.github.io/2021/11/08/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%87%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%96%B9%E6%A1%88%EF%BC%9F/"/>
-    <id>https://codroc.github.io/2021/11/08/%E4%B8%BA%E4%BB%80%E4%B9%88%E9%87%87%E7%94%A8%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%96%B9%E6%A1%88%EF%BC%9F/</id>
-    <published>2021-11-07T16:00:00.000Z</published>
-    <updated>2021-11-09T01:46:31.444Z</updated>
-    
-    <content type="html"><![CDATA[<h5 id="为什么采用线程池方案？"><a href="#为什么采用线程池方案？" class="headerlink" title="为什么采用线程池方案？"></a>为什么采用线程池方案？</h5><ol><li>采用线程池方案其实就是采用 <strong>单进程多线程</strong> 模式。它能有效利用 <strong>多核资源</strong> 提高吞吐量（qps）。</li><li>能有效降低 <strong>优先级反转</strong> 出现的概率。比如有两个计算任务，task1 需要花 1 ms，task2 需要花 20 ms，根据 <strong>短任务优先原则</strong> 应该先让 task1 使用 CPU；如果是在单线程情况下，task2 事件先到，那么它就会占用 CPU，直到计算完毕才会让出给 task1，这样 task1 的响应时间为 21 ms（有人会说那可以多个单线程进程呀，利用 OS 调度进程来让 task1 得到执行。如果这两个任务是需要共享一些数据的话，IPC 将会十分麻烦，而多线程则在共享数据方面比较简单），task2 的响应时间为 20 ms；如果采用多线程，就算 task1 事件后发生，它也会被分配到空闲的计算线程中去，这样，task1 的响应时间为 1 ms，task2 的响应时间为 20 ms，平均则为 10.5 ms，大大降低了平均响应时间。</li><li>当然，决定了使用多线程，那么自然就可以用线程池来减少线程重复创建销毁所带来的开销。</li></ol>]]></content>
-    
-    
-      
-      
-    <summary type="html">&lt;h5 id=&quot;为什么采用线程池方案？&quot;&gt;&lt;a href=&quot;#为什么采用线程池方案？&quot; class=&quot;headerlink&quot; title=&quot;为什么采用线程池方案？&quot;&gt;&lt;/a&gt;为什么采用线程池方案？&lt;/h5&gt;&lt;ol&gt;
-&lt;li&gt;采用线程池方案其实就是采用 &lt;strong&gt;单进程多线程</summary>
       
     
     
