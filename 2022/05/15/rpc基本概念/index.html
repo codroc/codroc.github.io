@@ -1,0 +1,38 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> RPC 相关的一些文章与概念 · Codroc Blog</title><meta name="description" content="RPC 相关的一些文章与概念 - Codroc"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="https://codroc.github.io/atom.xml" title="Codroc Blog"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Codroc Blog" type="application/atom+xml">
+</head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/favicon.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/codroc" target="_blank" class="nav-list-link">GITHUB</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">RPC 相关的一些文章与概念</h1><div class="post-info">2022年5月15日</div><div class="post-content"><h1 id="RPC-的概念"><a href="#RPC-的概念" class="headerlink" title="RPC 的概念"></a>RPC 的概念</h1><p>RPC 是 Remote Procedure Call 的缩写。即<strong>远端过程调用</strong>。</p>
+<p>过程可以理解为函数，远端可以理解为非本地的。</p>
+<p>可以参考与之相反的函数本地调用，它是发生在同一个进程环境中的。先来看看它的流程：<br><a href="C:\Users\codroc\Pictures\pictures\RPC图1.PNG">本地函数调用</a></p>
+<p>这段代码，我们知道，传入了1，2两个入参数，调用了本地代码段中的一个 Add 函数，得到了 result 出参。此时，传入数据，传出数据，代码段在同一个进程空间里，这是本地函数调用。</p>
+<p>而 RPC 是跨进程的函数调用（大多数情况下是跨主机的），它可以用以下流程表示：<br><a href="C:\Users\codroc\Pictures\pictures\RPC图2.PNG">远端函数调用</a></p>
+<h1 id="RPC-的作用"><a href="#RPC-的作用" class="headerlink" title="RPC 的作用"></a>RPC 的作用</h1><p>为什么要使用 RPC？我相信很多刚了解 RPC 的人都会想这个问题。对于很多人来说这其实是两个问题，<font color="red">一：为什么不把函数、方法都放在本地而要去调用远程的？二：不就是调用了一下不在本地的方法嘛，可以用 HTTP 协议通信来实现啊，为什么非要用 RPC 框架呢？</font></p>
+<h2 id="问题一"><a href="#问题一" class="headerlink" title="问题一"></a>问题一</h2><p>我仔细地想过，没有绝对的答案，必须要因地制宜，具体情况具体分析。如果你只是设计一个简单的应用（比如一个静态博客），那么把函数或方法都放在本地就可以了，还减去了网络通信上的时延。</p>
+<p>但是如果你要设计复杂的高并发系统（例如tb，pdd），你就不得不考虑到很多问题，<font color="red">例如系统的<a target="_blank" rel="noopener" href="https://www.w3cschool.cn/architectroad/architectroad-high-availability.html">高可用</a>，高可靠，<a target="_blank" rel="noopener" href="https://www.w3cschool.cn/architectroad/architectroad-high-concurrent.html">高并发</a>，可扩展性，系统维护等等。</font>这种系统一定是<a target="_blank" rel="noopener" href="https://www.cnblogs.com/xybaby/p/7787034.html">分布式系统</a>！在分布式系统中，RPC 是很常见的。</p>
+<hr>
+<p>简单的从几个角度分析，复杂系统必须用分布式系统：</p>
+<p>高可用：一个进程 cresh 了，或一台机器宕机了，或一处网络断掉了，都会导致系统不可用。为了<font color="red">防止尽量减少系统的不能提供服务的时间，必定是要做“集群化”，或者叫“冗余”</font>：只有一个单点，挂了服务会受影响；如果有冗余备份，挂了还有其他 backup 能够顶上。</p>
+<p>高并发：一台机器的性能是有极限的，当一台机器处理不过来时（或是存储不够时），增加服务器数量能够直接解决问题。</p>
+<p>系统维护：复杂的系统，往往由多个功能子系统构成，如果把所有子系统都放在同一个环境下，代码的维护将变得十分困难。版本的迭代很可能出现 Bug，一旦一个功能出现问题，由于所有功能都放在了一起，导致所有的代码都要回滚。</p>
+<hr>
+<h2 id="问题二"><a href="#问题二" class="headerlink" title="问题二"></a>问题二</h2><p>用 HTTP 协议来通信或自己设计一种通信协议不也可以做到远端的过程调用吗，那为什么非要搞出个 RPC 呢？</p>
+<p>可以去看这篇<a target="_blank" rel="noopener" href="https://www.w3cschool.cn/architectroad/architectroad-rpc-framework.html">文章</a>的“需求缘起”小节！</p>
+<h1 id="RPC-框架的目的"><a href="#RPC-框架的目的" class="headerlink" title="RPC 框架的目的"></a>RPC 框架的目的</h1><p>目的只有一个，对整个远端过程调用进行抽象，减少业务之外的重复性技术劳动。</p>
+<ul>
+<li><font color="red">调用方像调用本地函数一样去调用远端的函数（服务）。</font></li>
+<li><font color="red">服务提供方就像实现本地函数一样来实现函数。</font></li>
+</ul>
+<h1 id="RPC-技术点"><a href="#RPC-技术点" class="headerlink" title="RPC 技术点"></a>RPC 技术点</h1><p>RPC 一般分为 RPC-Client 和 RPC-Server，其中 RPC-Client 对服务的访问方式又分为同步访问、异步访问和半同步访问。</p>
+<p>在 RPC-Client 中，一般需要用到以下技术点：</p>
+<ul>
+<li>共同技术点：序列化反序列化，连接池，故障检测，负载均衡，超时处理等</li>
+<li>异步访问多了以下几点：上下文管理，收发队列，收发线程等</li>
+</ul>
+<p>这篇文章已经很好的总结了这些要点：<a target="_blank" rel="noopener" href="https://www.w3cschool.cn/architectroad/architectroad-rpc-client-asynchronous-send-and-receive.html">RPC-Client异步收发</a></p>
+<p>至于更多的技术点，我建议去看 <a target="_blank" rel="noopener" href="https://github.com/apache/incubator-brpc">brpc</a>，它是国内非常优秀的 RPC 框架，并配有十分详细的文档，看了让人受益匪浅！</p>
+<h1 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h1><ol>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/xybaby/p/7787034.html">分布式系统介绍</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.w3cschool.cn/architectroad/architectroad-high-availability.html">高可用</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.w3cschool.cn/architectroad/architectroad-high-concurrent.html">高并发</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.w3cschool.cn/architectroad/architectroad-rpc-client-asynchronous-send-and-receive.html">RPC-Client异步收发</a></li>
+<li><a target="_blank" rel="noopener" href="https://www.w3cschool.cn/architectroad/architectroad-rpc-framework.html">RPC框架</a></li>
+</ol>
+</div></article></div></main><footer><div class="paginator"><a href="/2022/05/12/chrono%E5%BA%93/" class="next">下一篇</a></div><div class="copyright"><p>© 2015 - 2022 <a href="https://codroc.github.io">Codroc</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script></body></html>
