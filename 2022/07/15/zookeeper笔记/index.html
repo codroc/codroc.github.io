@@ -1,0 +1,72 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> Zookeeper 笔记 · Codroc Blog</title><meta name="description" content="Zookeeper 笔记 - Codroc"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="https://codroc.github.io/atom.xml" title="Codroc Blog"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Codroc Blog" type="application/atom+xml">
+</head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/favicon.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/codroc" target="_blank" class="nav-list-link">GITHUB</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">Zookeeper 笔记</h1><div class="post-info">2022年7月15日</div><div class="post-content"><p><strong>转载自:</strong> <a target="_blank" rel="noopener" href="https://juejin.cn/post/6844903891146915848">经典分布式论文阅读：Zookeeper</a></p>
+<p>本文是 ZooKeeper 论文的阅读笔记，ZooKeeper 用于协调分布式系统中的进程，为分布式系统提供消息群发、共享寄存器、分布式锁这些中心化的服务。</p>
+<p>分布式系统中需要的协调服务包括：配置、组成员关系、领导选举和锁服务。ZooKeeper 并没有直接提供这些服务，因为更强的原语可以用来实现较弱的原语，ZooKeeper 提供了API 供开发者实现自己的原语。ZooKeeper 的 API 操作类似文件系统的层级结构上的免等待数据对象，同时保证所有操作的<strong>客户端先进先出</strong>和<strong>串行写入</strong>。ZooKpeer 使用管道架构实现高吞吐和低延迟，更新操作采用 Zab 保证线性，读取操作在服务器本地进行，不需要确定顺序。观察机制在数据更新之后通知客户端，使得客户端能够快速获取最新数据。</p>
+<h2 id="ZooKeeper-服务"><a href="#ZooKeeper-服务" class="headerlink" title="ZooKeeper 服务"></a>ZooKeeper 服务</h2><p>ZooKeeper以库的形式向客户端提供API，库也负责客户端到ZooKeeper服务器的连接。ZooKeeper中的数据节点称为<strong>znode</strong>，以树型命名空间组织。客户端连接服务器后建立<strong>会话</strong>，通过会话句柄发送请求。</p>
+<h3 id="服务总览"><a href="#服务总览" class="headerlink" title="服务总览"></a>服务总览</h3><p>ZooKeeper给客户端提供了数据对象的抽象（znode）。</p>
+<p><img src="https://s2.loli.net/2022/07/15/rJi5ZPxEtfLS3pe.png" alt="zookeeper0.PNG"></p>
+<p>znode有两种类型：</p>
+<ul>
+<li><strong>常规</strong>：数据对象正常创建和删除。</li>
+<li><strong>临时</strong>：创建对象的会话终止之后，对象会被删除。</li>
+</ul>
+<p>如果在创建文件的时候设置<code>SEQUENTIAL</code>标志，那么会在文件名后增加一个自动增加的计数器。ZooKeeper实现了观测(watch)机制，能够在数据对象更新后通知客户端，观测只会触发一次。</p>
+<p><strong>数据模型</strong>：ZooKeeper中的数据模型是只支持全量读写的文件系统，znode保存应用程序的抽象概念，用来存储配置、元数据等信息。</p>
+<p><strong>会话</strong>：客户端连接ZooKeeper后建立会话，会话用来标识客户端。</p>
+<h3 id="客户端API"><a href="#客户端API" class="headerlink" title="客户端API"></a>客户端API</h3><ul>
+<li><code>create(path, data, flags)</code>：创建一个路径为<code>path</code>的znode，将<code>data[]</code>保存到其中，返回新znode的名称，<code>flags</code>用来设置znode类型：普通或者临时，以及设置<code>SEQUENTIAL</code>标志。</li>
+<li><code>delete(path, version)</code>：如果版本匹配，删除<code>path</code>对应的znode。</li>
+<li><code>exists(path, watch)</code>：如果<code>path</code>对应的znode存在，那么返回真，否则返回假。<code>watch</code>标志让客户端观测这个znode。</li>
+<li><code>getData(path, watch)</code>：返回znode对应的数据和元数据，<code>watch</code>功能类似。</li>
+<li><code>setData(path, data, version)</code>：如果版本匹配，将<code>data[]</code>写入到<code>path</code>对应的znode中。</li>
+<li><code>getChildren(path, watch)</code>：返回znode的子节点集合。</li>
+<li><code>sync(path)</code>：等待目前所有未决的更新，<code>path</code>没什么用。</li>
+</ul>
+<p>以上全部的方法提供了阻塞版本和非阻塞版本，如果传入版本号为-1，那么不进行版本检查。</p>
+<h3 id="ZooKeeper保证"><a href="#ZooKeeper保证" class="headerlink" title="ZooKeeper保证"></a>ZooKeeper保证</h3><p>ZooKeeper有两项基本的顺序保证</p>
+<ul>
+<li><strong>线性写入</strong>：所有改变ZooKeeper状态的更新都是串行的；</li>
+<li><strong>客户端先进先出</strong>：所有来自客户端的请求按照先进先出顺序执行。</li>
+</ul>
+<p>可以举个例子演示这两个保证如何保障系统运行。假设一个系统选举主节点管理其他节点，主节点随后需要更新一些配置，然后通知其他节点，要求：</p>
+<ul>
+<li>主节点在修改配置过程，不希望其他节点访问正在被修改的配置</li>
+<li>主节点在更新完成前崩溃，不希望其他节点访问这些破碎的配置</li>
+</ul>
+<p>可以设置一个<code>ready</code>znode解决，主节点可以在配置前删除，完成后重新建立。当其他节点看到<code>ready</code>不存在时就不读取配置。</p>
+<p>但是还会存在问题：如果其他节点看到<code>ready</code>后读取配置，但是主节点随即删除开始修改配置，那么其他节点将得到过时的配置。这个问题可以采用观测机制来解决，<code>ready</code>删除后会及时通知其他节点。</p>
+<p>ZooKeeper两个耐久性保证：</p>
+<ul>
+<li>如果大部分服务器都活跃，那么服务就是可用的</li>
+<li>如果ZooKeeper成功响应了一个修改请求，只要大部分的节点都可以最终恢复，那么修改就可以在无数次故障中保持持久。</li>
+</ul>
+<h3 id="原语例子"><a href="#原语例子" class="headerlink" title="原语例子"></a>原语例子</h3><ul>
+<li><p><strong>配置管理</strong>：只需要将配置保存在一个znode中，各个进程可以通过观测来获取配置更新通知。</p>
+</li>
+<li><p><strong>会合</strong>：很多分布式系统包含主节点和工作节点，但是节点的调度由调度器决定，可以将主节点信息放在一个znode，供工作节点找到主节点。</p>
+</li>
+<li><p><strong>组成员关系</strong>：组成员进程上线之后可以在组对应的znode之下创建对应的临时子znode，成员进程退出之后临时znode也被删除，因此可以通过组znode的子znode获取组成员状态。</p>
+</li>
+<li><p><strong>简单锁</strong>：锁可以创建一个对应的znode实现。如果创建成功，那么获取锁。如果已经存在，那么需要等待锁被释放（znode被删除）后才能获取锁（创建znode）。</p>
+</li>
+<li><p><strong>无羊群效应的简单锁</strong>：简单锁会出现大量进程竞争的情况，可以将锁请求排序后，按次序分配锁。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">CREATE(&quot;f&quot;, data, sequential&#x3D;TRUE, ephemeral&#x3D;TRUE)</span><br><span class="line">WHILE TRUE:</span><br><span class="line">    LIST(&quot;f*&quot;)</span><br><span class="line">    IF NO LOWER #FILE: RETURN</span><br><span class="line">    IF EXIST(NEXT LOWER #FILE, watch&#x3D;TRUE):</span><br><span class="line">        WAIT</span><br></pre></td></tr></table></figure></li>
+<li><p><strong>读写锁</strong>：写锁和普通锁类似，和其他的锁互斥。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Write Lock</span><br><span class="line">1   n &#x3D; create(l + “&#x2F;write-”, EPHEMERAL|SEQUENTIAL)</span><br><span class="line">2   C &#x3D; getChildren(l, false)</span><br><span class="line">3   if n is lowest znode in C, exit</span><br><span class="line">4   p &#x3D; znode in C ordered just before n</span><br><span class="line">5   if exists(p, true) wait for event</span><br><span class="line">6   goto 2</span><br></pre></td></tr></table></figure></li>
+<li><p>读锁之间可以互相兼容，和写锁互斥。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Read Lock</span><br><span class="line">1   n &#x3D; create(l + “&#x2F;read-”, EPHEMERAL|SEQUENTIAL)</span><br><span class="line">2   C &#x3D; getChildren(l, false)</span><br><span class="line">3   if no write znodes lower than n in C, exit</span><br><span class="line">4   p &#x3D; write znode in C ordered just before n</span><br><span class="line">5   if exists(p, true) wait for event</span><br><span class="line">6   goto 3</span><br></pre></td></tr></table></figure></li>
+<li><p><strong>双栅栏</strong>：双栅栏用来保证多个客户端的计算同时开始和同时结束。客户端开始计算之前添加znode到栅栏对应的znode之下，结束计算之后删除znode。客户端需要等待栅栏znode的子znode数量到达一定阈值后才能开始计算，客户端可以等待一个特殊的<code>ready</code>的znode的创建，当数量到达阈值后创建。客户端退出的时候需要等待子znode全部被删除，同样可以通过删除<code>ready</code>删除。</p>
+</li>
+</ul>
+<h2 id="ZooKeeper应用"><a href="#ZooKeeper应用" class="headerlink" title="ZooKeeper应用"></a>ZooKeeper应用</h2><ul>
+<li><strong>解析服务</strong>：在雅虎的爬虫系统的解析服务中，主节点需要告知解析节点系统配置，解析节点需要报告自己的状态。因此，解析服务使用ZooKeeper<strong>管理配置</strong>和<strong>领导选举</strong>。下图是系统读写操作情况，可以发现读取操作占大头。</li>
+<li><strong><a href="https://link.juejin.cn/?target=http://katta.sourceforge.net/">Katta</a><strong>：Katta是一个分布式索引，主节点将分片分配给从节点并追踪进度，主要使用ZooKeeper进行组成员</strong>关系管理</strong>、<strong>领导选举</strong>和<strong>配置管理</strong>。</li>
+<li><strong>雅虎消息中介</strong>：雅虎消息中介负责无数话题下的消息的发布和接收，这些话题分布在多个服务器上，每个服务器采用主从备份。系统的znode结构如下图所示，类似于<code>shutdown</code>、<code>migration_prohibited</code>是系统的配置信息，<code>nodes</code>保存了属于组成员的服务器信息，而<code>topics</code>保存了负责具体话题对应的主服务器已经从服务器，另外在主节点奔溃后需要<strong>领导选举</strong>。</li>
+</ul>
+<h2 id="ZooKeeper实现"><a href="#ZooKeeper实现" class="headerlink" title="ZooKeeper实现"></a>ZooKeeper实现</h2><p>ZooKeeper的组件如下图所示，ZooKeeper的数据副本保存在每一个服务器上，写操作需要通过一致性协议提交到数据库，而读取请求可以直接访问服务器本地数据库获得。ZooKeeper在应用修改到数据库之前会写入到磁盘，故障后采用快照加日志的方式进行故障。根据一致协议，写入请求会转发到领导(leader)节点。</p>
+<p><img src="https://s2.loli.net/2022/07/15/23BXaARJCq6YTzi.png" alt="zookeeper1.PNG"></p>
+<h3 id="请求处理器"><a href="#请求处理器" class="headerlink" title="请求处理器"></a>请求处理器</h3><p>请求处理器收到写入请求之后，会将其转换为幂等的事务，根据请求内容计算出新的数据、版本号和时间戳，等待应用到数据库中。</p>
+<h3 id="原子广播"><a href="#原子广播" class="headerlink" title="原子广播"></a>原子广播</h3><p>ZooKeeper使用Zab作为原子广播协议，使用简单的多数认同达成一致性。Zab保证广播发送和接受的顺序是一致的，领导节点广播之前需要确保已经收到了前一个领导的广播。</p>
+<h3 id="多副本数据库"><a href="#多副本数据库" class="headerlink" title="多副本数据库"></a>多副本数据库</h3><p>当服务器故障后，使用周期性的快照和快照之后的日志恢复。创建快照的时候并不需要锁定，因为事务都是幂等的，因此再次应用已经应用的修改没有影响。</p>
+<h3 id="客户端-服务器交互"><a href="#客户端-服务器交互" class="headerlink" title="客户端-服务器交互"></a>客户端-服务器交互</h3><p>当服务器执行一个写入操作后，会通知观测的客户端并清除观测，每个服务器只负责通知自己连接的客户端。每个读取请求对应着一个<code>zxid</code>，对应服务器上看到的最后一个写入事务的ID。因为读取是在服务器本地进行，可能在读取之前的一些写入没有同步到客户端连接的服务器，ZooKeeper提供了<code>sync</code>操作，保证<code>sync</code>之后的读取操作都能够获得发生在<code>sync</code>之前的写入结果。客户端会从服务器获取最新<code>zxid</code>，<code>zxid</code>另外一个作用就是保证客户端在切换服务器后，新服务器看到视图不能比客户端之前看到的视图落后，也就是服务器<code>zxid</code>不能早于客户端的<code>zxid</code>。如果检测客户端故障，会话是有超时时间的，客户端在没有活动期间也要发送心跳避免超时。</p>
+</div></article></div></main><footer><div class="paginator"><a href="/2022/07/12/Serialize/" class="next">下一篇</a></div><div class="copyright"><p>© 2015 - 2022 <a href="https://codroc.github.io">Codroc</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script></body></html>
