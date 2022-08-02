@@ -9,9 +9,9 @@
   </url>
   
   <url>
-    <loc>https://codroc.github.io/2022/04/11/leveldb6_cache/</loc>
+    <loc>https://codroc.github.io/2022/08/02/leveldb2_data_mutation/</loc>
     
-    <lastmod>2022-04-11</lastmod>
+    <lastmod>2022-08-02</lastmod>
     
   </url>
   
@@ -303,6 +303,13 @@
   </url>
   
   <url>
+    <loc>https://codroc.github.io/2022/04/11/leveldb6_cache/</loc>
+    
+    <lastmod>2022-04-11</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://codroc.github.io/2022/02/27/Fiber/</loc>
     
     <lastmod>2022-02-27</lastmod>
@@ -312,7 +319,7 @@
 
   <url>
     <loc>https://codroc.github.io/</loc>
-    <lastmod>2022-08-01</lastmod>
+    <lastmod>2022-08-02</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
