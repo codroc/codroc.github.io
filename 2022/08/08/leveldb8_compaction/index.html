@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="zh-cn"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><title> leveldb 源码分析 [8] —— Compaction · Codroc Blog</title><meta name="description" content="leveldb 源码分析 [8] —— Compaction - Codroc"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" href="/favicon.png"><link rel="stylesheet" href="/css/apollo.css"><link rel="search" type="application/opensearchdescription+xml" href="https://codroc.github.io/atom.xml" title="Codroc Blog"><meta name="generator" content="Hexo 5.4.0"><link rel="alternate" href="/atom.xml" title="Codroc Blog" type="application/atom+xml">
+</head><body><div class="wrap"><header><a href="/" class="logo-link"><img src="/favicon.png" alt="logo"></a><ul class="nav nav-list"><li class="nav-list-item"><a href="/" target="_self" class="nav-list-link">BLOG</a></li><li class="nav-list-item"><a href="/archives/" target="_self" class="nav-list-link">ARCHIVE</a></li><li class="nav-list-item"><a href="https://github.com/codroc" target="_blank" class="nav-list-link">GITHUB</a></li></ul></header><main class="container"><div class="post"><article class="post-block"><h1 class="post-title">leveldb 源码分析 [8] —— Compaction</h1><div class="post-info">2022年8月8日</div><div class="post-content"><h1 id="LevelDB-源码分析【8】——-Compaction"><a href="#LevelDB-源码分析【8】——-Compaction" class="headerlink" title="LevelDB 源码分析【8】—— Compaction"></a>LevelDB 源码分析【8】—— Compaction</h1><p>Compaction 类型：</p>
+<ul>
+<li>minor compaction：指 immutable memtable ——&gt; level(0) sstabl</li>
+<li>major compaction：指合并 level(i) 和 level(i + 1) 的 sstable 到 level(i + 1)</li>
+</ul>
+<p>Compaction 的四个目的：</p>
+<ul>
+<li>持久化数据：把内存中的数据通过 minor compaction 持久化到磁盘</li>
+<li>提高读取效率：由于 level(0) 中 sstable 的数据可以出现 overlap，因此读取一个 key 最差情况下可能要遍历 level(0) 的所有 sstable 文件（因为，给出一个 key = 50，和 level(0) 中的所有 sstable 文件 sstable0、sstable1，sstable0 的 key 的范围在[0, 100]，sstable1 的 key 的范围在[30, 70]，那么最差情况就是我查看了sstable1 发现没有 key，然后再查看 sstable0 发现存在 key，也就是说最差情况要遍历完 level0 的所有的 sstable 文件）</li>
+<li>平衡读写差异：当用户写入的速度始终大于 major compaction 的速度时，就会导致 0 层的文件数量还是不断上升，用户的读取效率持续下降</li>
+<li>整理数据：Leveldb 是典型的 LSM Tree 的实现，一个同样的 key，可能存在多条数据项；为了减少空间放大对不同版本相同 key 的数据项进行整合</li>
+</ul>
+<h2 id="Compaction-的过程"><a href="#Compaction-的过程" class="headerlink" title="Compaction 的过程"></a>Compaction 的过程</h2><p>上面介绍了 Compaction 分为两类，那么它们是怎么进行的，以及触发 compaction 的时机是什么？</p>
+<h3 id="Minor-Compaction"><a href="#Minor-Compaction" class="headerlink" title="Minor Compaction"></a>Minor Compaction</h3><p><strong>触发的时机：</strong></p>
+<p>当 memtable 的 size 达到一个阈值后，会变成 immutable memtable，然后后台线程发现存在 immutable memtable 后回去执行 minor compaction</p>
+<p><strong>过程：</strong></p>
+<p>一次 minor compaction 非常简单，其本质就是将一个内存数据库中的所有数据持久化到一个磁盘文件中。每次 minor compaction 结束后，都会生成一个新的 sstable 文件，也意味着 <strong>Leveldb 的版本状态发生了变化，会进行一个版本的更替</strong></p>
+<p><strong>minor compaction 的优先级高于 major compaction</strong>，当进行 minor compaction 的时候有 major compaction 正在进行，则会首先暂停 major compaction</p>
+<p><img src="https://s2.loli.net/2022/07/30/wprDEfxMTiFts4H.png" alt="compaction0.png"></p>
+<h3 id="Major-Compaction"><a href="#Major-Compaction" class="headerlink" title="Major Compaction"></a>Major Compaction</h3><p><strong>触发的时机：</strong></p>
+<ul>
+<li>0 层 sstable 文件个数到达一定数量（默认为 4 个）（目的：为了提高 0 层的读取效率）</li>
+<li>i 层（i &gt; 0）所有 sstable 文件的数据量超过 10^i MB 时 （目的：为了降低 compaction 的 IO 开销）</li>
+<li>当某个文件无效读取的次数过多 （目的：避免可能存在 “巨大” 的合并开销，我称其为“进位”开销，具体参看<a target="_blank" rel="noopener" href="https://leveldb-handbook.readthedocs.io/zh/latest/compaction.html">compaction</a>）</li>
+</ul>
+<p>什么是无效读取？就是指读了该 sstable 文件，想要找到对应的 key，但是 miss 了，就表示该次读取无效；</p>
+<p><strong>过程：</strong></p>
+<p>整个 major compaction 可以简单地分为以下几步：</p>
+<ol>
+<li>寻找合适的输入文件；</li>
+<li>根据 key 重叠情况扩大输入文件集合；</li>
+<li>多路合并；</li>
+<li>积分计算；</li>
+</ol>
+<h4 id="寻找合适的输入文件"><a href="#寻找合适的输入文件" class="headerlink" title="寻找合适的输入文件"></a>寻找合适的输入文件</h4><p><em>对于 0 层 sstable 文件</em>数量达到一定阈值以及 <em>i 层 sstable 文件</em>数据量达到一定阈值而触发的 compaction 采用<strong>轮转的方法</strong>选择<strong>起始输入文件</strong>。它们会记住上次 compaction 之后输出文件的最大的 key，然后这次的起始输入文件就选择该 key 的后面一个 sstable 文件；</p>
+<p>对于<em>错峰合并</em>，起始输入文件则为无效查询次数过多的文件；</p>
+<h4 id="扩大输入文件集合"><a href="#扩大输入文件集合" class="headerlink" title="扩大输入文件集合"></a>扩大输入文件集合</h4><p>该过程如下：</p>
+<ol>
+<li>红星标注的为起始输入文件；</li>
+<li>在level i层中，查找与起始输入文件有key重叠的文件，如图中红线所标注，最终构成level i层的输入文件；</li>
+<li>利用level i层的输入文件，在level i+1层找寻有key重叠的文件，结果为绿线标注的文件，构成level i，i+1层的输入文件；</li>
+<li>最后利用两层的输入文件，在不扩大level i+1输入文件的前提下，查找level i层的有key重叠的文件，结果为蓝线标准的文件，构成最终的输入文件；</li>
+</ol>
+<p><img src="https://s2.loli.net/2022/07/30/6dzhBLFVCxD8kj3.png" alt="compaction1.png"></p>
+<h4 id="多路合并"><a href="#多路合并" class="headerlink" title="多路合并"></a>多路合并</h4><p>多路合并就是简单的有序数组归并的过程，不过需要注意的一点是，当一个 sstable 被合并之后，如果该 sstable 还在被用户引用，那么就不能立即删除，要等到引用计数为 0 时在做删除操作；</p>
+<h4 id="积分计算"><a href="#积分计算" class="headerlink" title="积分计算"></a>积分计算</h4><p>对每一层，leveldb 都会为其维护一个元数据（计分牌，存于 version 中），用于表示每一层的文件个数或是数据总量，来挑选出下一个需要进行合并的层；</p>
+<p>计分的规则：</p>
+<ul>
+<li>对于0层文件，该层的分数为文件总数／4；</li>
+<li>对于非0层文件，该层的分数为文件数据总量／数据总量上限；</li>
+</ul>
+<p>将得分最高的层数记录，若该得分超过1，则为下一次进行合并的层数；</p>
+</div></article></div></main><footer><div class="paginator"><a href="/2022/08/08/leveldb6_cache/" class="next">下一篇</a></div><div class="copyright"><p>© 2015 - 2022 <a href="https://codroc.github.io">Codroc</a>, powered by <a href="https://hexo.io/" target="_blank">Hexo</a> and <a href="https://github.com/pinggod/hexo-theme-apollo" target="_blank">hexo-theme-apollo</a>.</p></div></footer></div><script async src="//cdn.bootcss.com/mathjax/2.7.0/MathJax.js?config=TeX-MML-AM_CHTML" integrity="sha384-crwIf/BuaWM9rM65iM+dWFldgQ1Un8jWZMuh3puxb8TOY9+linwLoI7ZHZT+aekW" crossorigin="anonymous"></script></body></html>
